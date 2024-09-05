@@ -1,0 +1,93 @@
+<html>
+<head>
+    <title>Placar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <script src="https://kit.fontawesome.com/15fce56598.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container mobile" style="padding: 15px">
+        <button id="new-match-day" class="button is-primary">Começar Nova Pelada</button>
+        
+        <div id="new-match-day-form" style="display: none">
+            <div class="columns">
+                <div class="column">
+                    <label>Jogadores por time:</label>
+                    <input type="number" id="players-per-team" placeholder="Jogadores por time" value="4" class="input is-primary" />
+                </div>
+                <div class="column">
+                    <label>Pontos Máximos:</label>
+                    <input type="number" id="max-points" placeholder="Pontos máximos" value="11" class="input is-primary" />
+                </div>
+            </div>
+            <div class="columns">
+                <div class="column">
+                    <input type="text" placeholder="Nome do jogador" id="new-player-name" class="input is-primary" />
+                </div>
+                <div class="column">
+                    <button id="add-new-player" class="button is-secondary">Adicionar novo jogador</button>
+                </div>
+            </div>
+            
+            <ul id="player-list" class="content"></ul>
+            <button id="start-match-day" class="button is-primary">Iniciar Pelada</button>
+            <button id="update-match-day" class="button is-primary" style="display: none">Atualizar Pelada</button>
+        </div>
+
+        <div id="match" style="display: none" class="box">
+            <div>Partida #<span id="match-number">0</span></div>
+            <div class="grid">
+                <div class="cell has-text-centered">
+                    <h1 id="team-1-captain" class="title">TEAM 1 CAPTAIN</h1>
+                    <article class="message is-info score-point" style="cursor: pointer" id="score-1">
+                        <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-1"></i></div>
+                        <div class="message-body is-size-1" id="score-team-1">0</div>
+                    </article>
+                    <ul id="team-1-players"></ul>
+                </div>
+                <div class="cell is-row-span-2 has-text-centered">
+                    <h1 class="title">X</h1>
+                </div>
+                <div class="cell has-text-centered">
+                    <h1 id="team-2-captain" class="title">TEAM 2 CAPTAIN</h1>
+                    <article class="message is-danger score-point" style="cursor: pointer" id="score-2">
+                        <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-2"></i></div>
+                        <div class="message-body is-size-1" id="score-team-2">0</div>
+                    </article>
+                    <ul id="team-2-players"></ul>
+                </div>
+            </div>
+
+            <div class="fixed-grid has-2-cols">
+                <div class="grid">
+                    <div class="cell  is-col-from-end-1">
+                        <button id="change-match-day" class="button is-info"><i class="fa-solid fa-gear"></i></button>
+                        <button id="end-match-day" class="button is-danger"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="panel" id="all-player-list" style="display: none; margin-top: 5px">
+            <p class="panel-heading">Jogadores</p>
+            <table class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Partidas</th>
+                        <th>Vitórias</th>
+                        <th>Derrotas</th>
+                        <th>Última partida jogada</th>
+                        <th id="playing">Jogando</th>
+                    </tr>
+                </thead>
+                <tbody id="players"></tbody>
+            </table>
+        </nav>
+    </div>
+</body>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+  <script src="./index.js"></script>
+</html>

@@ -193,6 +193,7 @@ $("#update-match-day").click(function() {
 });
 
 function endMatch(victoryTeam) {
+    alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
     matches += 1;
 
     // Add one match to every player and one victory to each player on winning team

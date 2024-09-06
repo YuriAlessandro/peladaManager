@@ -78,6 +78,7 @@ $("#all-player-list").on("click", ".remove-player", function() {
 $("#new-match-day").click(function() {
     $("#new-match-day-form").show();
     $("#new-match-day").hide();
+    $("#new-match-day-button").hide();
 });
 
 function addNewPlayer(){
@@ -288,6 +289,7 @@ $(".score-point").click(function() {
         $("#serving-2").show();
     }
 
+    const diff = Math.abs(team1Score - team2Score);
     if (diff >= 2 ) {
         if (team1Score >= maxPoints) {
             endMatch(0);
@@ -306,7 +308,7 @@ $("#end-match-day").click(function() {
 
     if (confirm) {
         saveOnLocalStorage(false);
-        $("#new-match-day").show();
+        $("#new-match-day").hide();
         $("#new-match-day-form").hide();
         $("#match").hide();
     }
@@ -350,6 +352,29 @@ $("#change-match-day").click(function() {
 
     $("#players-per-team").val(playersPerTeam);
     $("#max-points").val(maxPoints);
+});
+
+$("#end-current-match").click(function() {
+    let team1Score = parseInt($("#score-team-1").text());
+    let team2Score = parseInt($("#score-team-2").text());
+    const winningTeam = team1Score > team2Score ? 0 : 1;
+    const losingTeam = 1 - winningTeam;
+    
+    const confirm = window.confirm("Deseja realmente encerrar a partida?");
+    if (confirm) {
+        startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
+    }
+
+    saveOnLocalStorage();
+});
+
+$("#swap-current-match").click(function() {
+    const temp = playingTeams[0];
+    playingTeams[0] = playingTeams[1];
+    playingTeams[1] = temp;
+
+    updateCurrentMatch(playingTeams);
+    saveOnLocalStorage();
 });
 
 $(document).ready(function (){

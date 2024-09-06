@@ -189,6 +189,7 @@ $("#update-match-day").click(function() {
     $("#match").show();
     $("#new-match-day-form").hide();
     $("#player-list").hide();
+    updatePlayerList();
     saveOnLocalStorage();
 });
 
@@ -272,27 +273,29 @@ function startNewMatch(winningPlayers, losingPlayers) {
 $(".score-point").click(function() {
     const teamIndex = $(this).attr("id");
     
-    let team1Score = 0;
-    let team2Score = 0;
+    let team1Score = parseInt($("#score-team-1").text());
+    let team2Score = parseInt($("#score-team-2").text());
 
     if (teamIndex === "score-1") {
-        team1Score = parseInt($("#score-team-1").text()) + 1;
+        team1Score += 1;
         $("#score-team-1").text(team1Score);
         $("#serving-1").show();
         $("#serving-2").hide();
     } else if (teamIndex === "score-2") {
-        team2Score = parseInt($("#score-team-2").text()) + 1;
+        team2Score += 1;
         $("#score-team-2").text(team2Score);
         $("#serving-1").hide();
         $("#serving-2").show();
     }
 
-    if (team1Score === maxPoints) {
-        endMatch(0);
-        startNewMatch(playingTeams[0], playingTeams[1]);
-    } else if (team2Score === maxPoints) {
-        endMatch(1);
-        startNewMatch(playingTeams[1], playingTeams[0]);
+    if (diff >= 2 ) {
+        if (team1Score >= maxPoints) {
+            endMatch(0);
+            startNewMatch(playingTeams[0], playingTeams[1]);
+        } else if (team2Score >= maxPoints) {
+            endMatch(1);
+            startNewMatch(playingTeams[1], playingTeams[0]);
+        }
     }
 
     saveOnLocalStorage();
@@ -331,6 +334,24 @@ $("#end-match-day").click(function() {
     });
 });
 
+$("#change-match-day").click(function() {
+    $("#player-list").empty();
+    $("#new-match-day-form").show();
+    $("#player-list").show();
+    $("#new-match-day").hide();
+    $("#match").hide();
+    $("#all-player-list").hide();
+    $("#start-match-day").hide();
+    $("#update-match-day").show();
+
+    players.forEach(player => {
+        $("#player-list").append(`<li>${player.name}</li>`);
+    });
+
+    $("#players-per-team").val(playersPerTeam);
+    $("#max-points").val(maxPoints);
+});
+
 $(document).ready(function (){
     const gameDays = getFromLocalStorage();
 
@@ -357,19 +378,4 @@ $(document).ready(function (){
     }
 
     currentId = gameDays.length + 1;
-});
-
-$("#change-match-day").click(function() {
-    $("#player-list").empty();
-    $("#new-match-day-form").show();
-    $("#player-list").show();
-    $("#new-match-day").hide();
-    $("#match").hide();
-    $("#all-player-list").hide();
-    $("#start-match-day").hide();
-    $("#update-match-day").show();
-
-    players.forEach(player => {
-        $("#player-list").append(`<li>${player.name}</li>`);
-    });
 });

@@ -27,6 +27,18 @@
                 </div>
             </div>
             <div class="columns">
+                <div class="column is-size-3">
+                    <label class="checkbox">
+                        <input type="checkbox" id="auto-switch-teams" />
+                        Trocar times automaticamente
+                    </label>
+                </div>
+                <div class="column">
+                    <label>Trocar times a cada:</label>
+                    <input type="number" placeholder="Quantidade de pontos" id="auto-switch-teams-points" disabled class="input is-primary is-large" value="5" />
+                </div>
+            </div>
+            <div class="columns">
                 <div class="column">
                     <input type="text" placeholder="Nome do jogador" id="new-player-name" class="input is-primary is-large" />
                 </div>
@@ -100,5 +112,5 @@
   src="https://code.jquery.com/jquery-3.7.1.min.js"
   integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
   crossorigin="anonymous"></script>
-  <script src="./index.js?v=3"></script>
+  <script src="./index.js?v=4"></script>
 </html>

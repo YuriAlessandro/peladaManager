@@ -5,6 +5,7 @@ let players = [];
 let playingTeams = [];
 let matches = 0;
 let currentId = 0;
+let autoSwitchTeamsPoints = 0;
 
 const localStorage = window.localStorage;
 
@@ -19,6 +20,7 @@ function saveOnLocalStorage(isLive = true) {
             playingTeams,
             matches,
             isLive,
+            autoSwitchTeamsPoints,
         },
     ]
 
@@ -162,6 +164,21 @@ function updateCurrentMatch(teams) {
 }
 
 $("#start-match-day").click(function() {
+    const automaticallySwitchTeams = $("#auto-switch-teams").is(":checked");
+    if (automaticallySwitchTeams) {
+        autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
+
+        if (autoSwitchTeamsPoints <= 0 || autoSwitchTeamsPoints === NaN || !autoSwitchTeamsPoints || autoSwitchTeamsPoints === undefined || autoSwitchTeamsPoints === '') { 
+            alert("Insira um valor maior que 0 para a troca automática de times.");
+            return;
+        }
+
+        if (autoSwitchTeamsPoints >= maxPoints) {
+            alert("Insira um valor menor que o máximo de pontos.");
+            return;
+        }
+    }
+
     maxPoints = parseInt($("#max-points").val());
     playersPerTeam = $("#players-per-team").val();
     
@@ -172,6 +189,7 @@ $("#start-match-day").click(function() {
     
     $("#all-player-list").show();
     const firstPlayers = players.slice(0, playersPerTeam * 2);
+
 
     saveOnLocalStorage();
     updateCurrentMatch(generateRandomTeams(firstPlayers));
@@ -300,6 +318,11 @@ $(".score-point").click(function() {
         }
     }
 
+    if (autoSwitchTeamsPoints > 0) {
+        const totalPoints = team1Score + team2Score;
+        if (totalPoints % autoSwitchTeamsPoints === 0) swapTeams();
+    }
+
     saveOnLocalStorage();
 });
 
@@ -357,6 +380,12 @@ $("#change-match-day").click(function() {
 $("#end-current-match").click(function() {
     let team1Score = parseInt($("#score-team-1").text());
     let team2Score = parseInt($("#score-team-2").text());
+
+    if (team1Score === team2Score) {
+        alert("Partida empatada, não é possível encerrar. Decida um vencedor.");
+        return;
+    }
+
     const winningTeam = team1Score > team2Score ? 0 : 1;
     const losingTeam = 1 - winningTeam;
     
@@ -368,13 +397,42 @@ $("#end-current-match").click(function() {
     saveOnLocalStorage();
 });
 
-$("#swap-current-match").click(function() {
+function swapTeams() {
     const temp = playingTeams[0];
     playingTeams[0] = playingTeams[1];
     playingTeams[1] = temp;
 
+    // Revert scores
+    const team1Score = $("#score-team-1").text();
+    const team2Score = $("#score-team-2").text();
+    $("#score-team-1").text(team2Score);
+    $("#score-team-2").text(team1Score);
+
+    if ($("#score-1").hasClass('is-info')) {
+        $("#score-1").removeClass('is-info').addClass('is-danger');
+        $("#score-2").removeClass('is-danger').addClass('is-info');
+    } else {
+        $("#score-1").removeClass('is-danger').addClass('is-info');
+        $("#score-2").removeClass('is-info').addClass('is-danger');
+    }
+
+    alert('Times invertidos!');
     updateCurrentMatch(playingTeams);
     saveOnLocalStorage();
+}
+
+$("#swap-current-match").click(function() {
+    swapTeams();
+});
+
+$("#auto-switch-teams").click(function() {
+    const checked = $(this).is(":checked");
+
+    if (checked) {
+        $("#auto-switch-teams-points").removeAttr('disabled');
+    } else {
+        $("#auto-switch-teams-points").attr('disabled','disabled');
+    }
 });
 
 $(document).ready(function (){
@@ -395,6 +453,7 @@ $(document).ready(function (){
             updateCurrentMatch(playingTeams);
             $("#new-match-day").hide();
             $("#new-match-day-form").hide();
+            $("#new-match-day-button").hide();
             $("#match").show();
             $("#all-player-list").show();
 

@@ -11,7 +11,8 @@
 </head>
 <body>
     <div id="new-match-day-button" class="is-mobile" style="display: flex; justify-content: center; align-items: center; height: 90vh;">
-        <button id="new-match-day" class="button is-primary is-large"><i class="fa-solid fa-plus"></i>&ensp;Começar Nova Pelada</button>
+        <button id="new-match-day" class="button is-primary is-large" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i>&ensp;Começar Nova Pelada</button>
+        <button id="show-historic" class="button is-primary is-large"><i class="fa-regular fa-clock"></i></i>&ensp;Histórico</button>
     </div>
     <div class="container mobile" style="padding: 15px">
         
@@ -107,10 +108,14 @@
             </table>
         </nav>
     </div>
+    <div class="container mobile" id="history-container" style="padding: 15px; display: none;">
+        <h1>Histórico de Partidas</h1>
+        <div class="columns" id="historic-days"></div>
+    </div>
 </body>
 <script
   src="https://code.jquery.com/jquery-3.7.1.min.js"
   integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
   crossorigin="anonymous"></script>
-  <script src="./index.js?v=4"></script>
+  <script src="./index.js?v=5"></script>
 </html>

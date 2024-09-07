@@ -21,6 +21,7 @@ function saveOnLocalStorage(isLive = true) {
             matches,
             isLive,
             autoSwitchTeamsPoints,
+            playedOn: new Date().toLocaleDateString(),
         },
     ]
 
@@ -326,17 +327,8 @@ $(".score-point").click(function() {
     saveOnLocalStorage();
 });
 
-$("#end-match-day").click(function() {
-    const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
-
-    if (confirm) {
-        saveOnLocalStorage(false);
-        $("#new-match-day").hide();
-        $("#new-match-day-form").hide();
-        $("#match").hide();
-    }
-
-    const playersByWinPercentage = players.sort((a, b) => {
+function getPlayersByWinPercentage() {
+    return players.sort((a, b) => {
         const aPercentage = a.victories / a.matches;
         const bPercentage = b.victories / b.matches;
 
@@ -344,10 +336,12 @@ $("#end-match-day").click(function() {
         if (aPercentage > bPercentage) return -1;
         return 0;
     });
+}
 
+function showFinalPlayerList(playersToDisplay) {
     $("#playing").hide();
     $("#players").empty();
-    playersByWinPercentage.forEach(player => {
+    playersToDisplay.forEach(player => {
         $("#players").append(`
             <tr>
                 <th>${player.name}</th>
@@ -357,6 +351,20 @@ $("#end-match-day").click(function() {
                 <td>${player.lastPlayedMatch}</td>
             </tr>`);
     });
+}
+
+$("#end-match-day").click(function() {
+    const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
+
+    if (confirm) {
+        saveOnLocalStorage(false);
+        $("#new-match-day").hide();
+        $("#new-match-day-form").hide();
+        $("#match").hide();
+        const playersByWinPercentage = getPlayersByWinPercentage();
+        showFinalPlayerList(playersByWinPercentage);
+    }
+
 });
 
 $("#change-match-day").click(function() {
@@ -433,6 +441,43 @@ $("#auto-switch-teams").click(function() {
     } else {
         $("#auto-switch-teams-points").attr('disabled','disabled');
     }
+});
+
+$("#show-historic").click(function() {
+    $("#history-container").show();
+    $("#new-match-day-button").hide();
+
+    const gameDays = getFromLocalStorage();
+    $("#historic").empty();
+    
+    console.log(gameDays);
+    gameDays.forEach(gameDay => {
+        $("#historic-days").append(`
+            <div class='column match-historic' id='${gameDay.id}'>
+                <button class='button is-large'>[${gameDay.id}] Jogo de ${gameDay.playedOn || new Date("2024-09-07")}</button>
+            </div>`);
+    });
+});
+
+$("#historic-days").on("click", ".match-historic", function() {
+    const gameId = $(this).attr("id");
+    const gameDays = getFromLocalStorage();
+    const gameDay = gameDays.find(gameDay => gameDay.id == gameId);
+
+    maxPoints = gameDay.maxPoints;
+    playersPerTeam = gameDay.playersPerTeam;
+    players = gameDay.players;
+    playingTeams = gameDay.playingTeams;
+    matches = gameDay.matches;
+    currentId = gameDay.id;
+
+    updatePlayerList();
+
+    const playersByWinPercentage = getPlayersByWinPercentage();
+
+    $("#history-container").hide();
+    $("#all-player-list").show();
+    showFinalPlayerList(playersByWinPercentage);
 });
 
 $(document).ready(function (){

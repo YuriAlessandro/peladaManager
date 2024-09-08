@@ -11,8 +11,25 @@ const localStorage = window.localStorage;
 
 
 function saveOnLocalStorage(isLive = true) {
-    const gameDays = [
-        {
+    const allGames = getFromLocalStorage();
+
+    // Update current game day
+    const currentGameDay = allGames.find(gameDay => gameDay.id === currentId);
+    if (currentGameDay) {
+        currentGameDay.maxPoints = maxPoints;
+        currentGameDay.playersPerTeam = playersPerTeam;
+        currentGameDay.players = players;
+        currentGameDay.playingTeams = playingTeams;
+        currentGameDay.matches = matches;
+        currentGameDay.isLive = isLive;
+        currentGameDay.autoSwitchTeamsPoints = autoSwitchTeamsPoints;
+        currentGameDay.playedOn = new Date().toLocaleDateString();
+
+        // Update all games with new curret game day
+        const currentGameIndex = allGames.findIndex(gameDay => gameDay.id === currentId);
+        allGames[currentGameIndex] = currentGameDay;
+    } else {
+        allGames.push({
             id: currentId, 
             maxPoints,
             playersPerTeam,
@@ -22,10 +39,10 @@ function saveOnLocalStorage(isLive = true) {
             isLive,
             autoSwitchTeamsPoints,
             playedOn: new Date().toLocaleDateString(),
-        },
-    ]
+        });
+    }
 
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gameDays));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allGames));
 }
 
 function getFromLocalStorage() {
@@ -454,7 +471,7 @@ $("#show-historic").click(function() {
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
             <div class='column match-historic' id='${gameDay.id}'>
-                <button class='button is-large'>[${gameDay.id}] Jogo de ${gameDay.playedOn || new Date("2024-09-07")}</button>
+                <button class='button is-large'>[${gameDay.id}] Jogo de ${gameDay.playedOn || new Date("2024-09-07").toLocaleString()}</button>
             </div>`);
     });
 });

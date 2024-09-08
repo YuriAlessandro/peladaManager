@@ -76,18 +76,53 @@ function updatePlayerList() {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
-                <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim' : 'Não'}</td>
+                <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
             </tr>`);
     });
 }
 
 $("#all-player-list").on("click", ".remove-player", function() {
     const playerName = $(this).parent().find("th").text();
-    if (playingTeams.flat().some(player => player.name === playerName)) {
-        alert("Jogador está jogando, não é possível remover.");
-        return;
-    }
     
+    // First check if it's a playing player
+    if (playingTeams.flat().some(player => player.name === playerName)) {
+        const playerOrder = players.sort((a,b) => sortPlayers(a, b));
+
+        // Get all players that are not playing
+        const notOnCurrentMatchPlayers = playerOrder.filter(player => !playingTeams.flat().some(p => p.name === player.name) && player.playing);
+
+        // Get next player not playing on list
+        let nextPlayer = notOnCurrentMatchPlayers.find(player => player.name !== playerName);
+        if (!nextPlayer) {
+            alert("Não há jogadores reservas para substituir.");
+            return;
+        }
+
+        const confirm = window.confirm(`${playerName} está jogando, deseja substituí-lo? ${nextPlayer.name} será adicionado ao time.`);
+
+        if (confirm) {   
+            nextPlayer.playing = true;
+
+            // Find in witch team the player is playing
+            const teamIndex = playingTeams.findIndex(team => team.some(player => player.name === playerName));
+            const team = playingTeams[teamIndex];
+            
+            // Remove player from team
+            const playerIndex = team.findIndex(player => player.name === playerName);
+            team.splice(playerIndex, 1);
+            
+            // Add nextPlayer to team
+            team.push(nextPlayer);
+            
+            // Update playingTeams
+            playingTeams[teamIndex] = team;
+            
+            updateCurrentMatch(playingTeams);
+            
+            alert(`${playerName} foi substituído por ${nextPlayer.name}`);
+        } else return;
+    }
+
     const playerIndex = players.findIndex(player => player.name === playerName);
     players[playerIndex].playing = !players[playerIndex].playing;
 
@@ -303,6 +338,16 @@ function startNewMatch(winningPlayers, losingPlayers) {
         }
     }
 
+    // Choose a random team to start serve
+    const teamIndex = Math.floor(Math.random() * 2);
+    if (teamIndex === 0) {
+        $("#serving-1").show();
+        $("#serving-2").hide();
+    } else {
+        $("#serving-1").hide();
+        $("#serving-2").show();
+    }
+
     updateCurrentMatch(generateRandomTeams(newPlayers));
     saveOnLocalStorage();
 }
@@ -339,6 +384,23 @@ $(".score-point").click(function() {
     if (autoSwitchTeamsPoints > 0) {
         const totalPoints = team1Score + team2Score;
         if (totalPoints % autoSwitchTeamsPoints === 0) swapTeams();
+    }
+
+    saveOnLocalStorage();
+});
+
+$(".undo-point").click(function() {
+    const teamIndex = $(this).attr("id");
+    
+    let team1Score = parseInt($("#score-team-1").text());
+    let team2Score = parseInt($("#score-team-2").text());
+
+    if (teamIndex === "undo-1") {
+        team1Score -= 1;
+        $("#score-team-1").text(team1Score >= 0 ? team1Score : 0);
+    } else if (teamIndex === "undo-2") {
+        team2Score -= 1;
+        $("#score-team-2").text(team2Score >= 0 ? team2Score : 0);
     }
 
     saveOnLocalStorage();

@@ -217,6 +217,8 @@ function updateCurrentMatch(teams) {
 }
 
 $("#start-match-day").click(function() {
+    $("#end-match-day").show();
+    
     const automaticallySwitchTeams = $("#auto-switch-teams").is(":checked");
     if (automaticallySwitchTeams) {
         autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
@@ -246,6 +248,7 @@ $("#start-match-day").click(function() {
 
     saveOnLocalStorage();
     updateCurrentMatch(generateRandomTeams(firstPlayers));
+    randomServe();
 });
 
 $("#update-match-day").click(function() {
@@ -338,6 +341,12 @@ function startNewMatch(winningPlayers, losingPlayers) {
         }
     }
 
+    randomServe();
+    updateCurrentMatch(generateRandomTeams(newPlayers));
+    saveOnLocalStorage();
+}
+
+function randomServe() {
     // Choose a random team to start serve
     const teamIndex = Math.floor(Math.random() * 2);
     if (teamIndex === 0) {
@@ -347,9 +356,6 @@ function startNewMatch(winningPlayers, losingPlayers) {
         $("#serving-1").hide();
         $("#serving-2").show();
     }
-
-    updateCurrentMatch(generateRandomTeams(newPlayers));
-    saveOnLocalStorage();
 }
 
 $(".score-point").click(function() {
@@ -440,6 +446,7 @@ $("#end-match-day").click(function() {
         $("#new-match-day").hide();
         $("#new-match-day-form").hide();
         $("#match").hide();
+        $(this).hide();
         const playersByWinPercentage = getPlayersByWinPercentage();
         showFinalPlayerList(playersByWinPercentage);
     }
@@ -529,7 +536,6 @@ $("#show-historic").click(function() {
     const gameDays = getFromLocalStorage();
     $("#historic").empty();
     
-    console.log(gameDays);
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
             <div class='column match-historic' id='${gameDay.id}'>
@@ -580,6 +586,7 @@ $(document).ready(function (){
             $("#new-match-day-button").hide();
             $("#match").show();
             $("#all-player-list").show();
+            $("#end-match-day").show();
 
             return;
         }

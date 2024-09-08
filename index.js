@@ -533,12 +533,12 @@ $("#show-historic").click(function() {
     $("#history-container").show();
     $("#new-match-day-button").hide();
 
-    const gameDays = getFromLocalStorage();
+    const gameDays = getFromLocalStorage().sort((a, b) => b.id - a.id);
     $("#historic").empty();
     
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
-            <div class='column match-historic' id='${gameDay.id}'>
+            <div class='cell match-historic' id='${gameDay.id}'>
                 <button class='button is-large'>[${gameDay.id}] Jogo de ${gameDay.playedOn || new Date("2024-09-07").toLocaleString()}</button>
             </div>`);
     });

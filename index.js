@@ -1,5 +1,6 @@
 const LOCAL_STORAGE_KEY = "matche_days";
 let maxPoints;
+let currentMatchMaxPoints;
 let playersPerTeam;
 let players = [];
 let playingTeams = [];
@@ -341,6 +342,7 @@ function startNewMatch(winningPlayers, losingPlayers) {
         }
     }
 
+    currentMatchMaxPoints = maxPoints;
     randomServe();
     updateCurrentMatch(generateRandomTeams(newPlayers));
     saveOnLocalStorage();
@@ -377,14 +379,17 @@ $(".score-point").click(function() {
     }
 
     const diff = Math.abs(team1Score - team2Score);
-    if (diff >= 2 ) {
-        if (team1Score >= maxPoints) {
-            endMatch(0);
-            startNewMatch(playingTeams[0], playingTeams[1]);
-        } else if (team2Score >= maxPoints) {
-            endMatch(1);
-            startNewMatch(playingTeams[1], playingTeams[0]);
-        }
+
+    if ((team1Score === currentMatchMaxPoints || team2Score === currentMatchMaxPoints) && diff < 2) {
+        currentMatchMaxPoints += 1;
+    }
+    
+    if (team1Score >= currentMatchMaxPoints && diff >= 2) {
+        endMatch(0);
+        startNewMatch(playingTeams[0], playingTeams[1]);
+    } else if (team2Score >= currentMatchMaxPoints && diff >= 2) {
+        endMatch(1);
+        startNewMatch(playingTeams[1], playingTeams[0]);
     }
 
     if (autoSwitchTeamsPoints > 0) {
@@ -579,6 +584,7 @@ $(document).ready(function (){
             matches = lastGameDay.matches;
             currentId = lastGameDay.id;
             
+            currentMatchMaxPoints = maxPoints;
             updatePlayerList();
             updateCurrentMatch(playingTeams);
             $("#new-match-day").hide();

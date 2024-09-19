@@ -236,6 +236,7 @@ $("#start-match-day").click(function() {
     }
 
     maxPoints = parseInt($("#max-points").val());
+    currentMatchMaxPoints = maxPoints;
     playersPerTeam = $("#players-per-team").val();
     
     if (playersPerTeam * 2 > players.length) {

@@ -19,32 +19,40 @@ function calculateMatchQuality(teamA, teamB) {
 
 function getAllTeamCombinations(players) {
   const halfSize = Math.floor(players.length / 2);
-  
-  function* combinations(arr, k) {
+
+  function* combinations(arr, k, start = 0) {
     if (k === 0) {
       yield [];
       return;
     }
-    for (let i = 0; i < arr.length; i++) {
-      const rest = arr.slice(i + 1);
-      for (const combo of combinations(rest, k - 1)) {
+    for (let i = start; i <= arr.length - k; i++) {
+      for (const combo of combinations(arr, k - 1, i + 1)) {
         yield [arr[i], ...combo];
       }
     }
   }
 
-  const allCombinations = Array.from(combinations(players, halfSize));
-  const teamPairs = allCombinations.map(teamA => {
+  const teamPairs = [];
+  const seenCombinations = new Set(); // Armazena as combinações vistas
+
+  for (const teamA of combinations(players, halfSize)) {
     const teamB = players.filter(p => !teamA.includes(p));
-    return [teamA, teamB];
-  });
+
+    // Cria uma chave única ordenando os dois times internamente e comparando-os em conjunto
+    const sortedTeams = [teamA.map(p => p.name).sort(), teamB.map(p => p.name).sort()].sort();
+    const key = JSON.stringify(sortedTeams);
+
+    if (!seenCombinations.has(key)) {
+      teamPairs.push([teamA, teamB]);
+      seenCombinations.add(key); // Armazena a combinação única
+    }
+  }
 
   return teamPairs;
 }
 
 function findBestTeamMatch(players) {
   const teamCombinations = getAllTeamCombinations(players);
-  
   const combinationsWithQuality = teamCombinations.map(([teamA, teamB]) => {
     const matchQuality = calculateMatchQuality(teamA, teamB);
     return { teamA, teamB, matchQuality };

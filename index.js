@@ -111,7 +111,7 @@ function updatePlayerList() {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
-                <td>${formatter.format(player.mu)}</td>
+                <td>${formatter.format(player.mu)}/${formatter.format(player.sigma)}</td>
                 <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
             </tr>`);
     });

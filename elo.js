@@ -51,7 +51,6 @@ function findBestTeamMatch(players) {
   })
 
   const sortedCombinations = combinationsWithQuality.sort((a, b) => b.matchQuality - a.matchQuality);
-  console.log('sortedCombinations', sortedCombinations);
   return sortedCombinations[0];
 }
 

@@ -15,7 +15,8 @@
         <button id="show-historic" class="button is-primary is-large"><i class="fa-regular fa-clock"></i></i>&ensp;Histórico</button>
     </div>
     <div class="container mobile" style="padding: 15px">
-        
+        <!-- checkbox for dev mode, use font awesome code icon -->
+
         <div id="new-match-day-form" style="display: none">
             <div class="columns">
                 <div class="column">
@@ -103,7 +104,7 @@
                             <th>Vitórias</th>
                             <th>Derrotas</th>
                             <th>Última partida jogada</th>
-                            <th>Elo</th>
+                            <th style="display: none;" id="elo-header">Elo</th>
                             <th id="playing">Jogando</th>
                         </tr>
                     </thead>
@@ -112,7 +113,14 @@
             </div>
         </nav>
 
-        <button id="end-match-day" class="button is-danger is-large" style="display: none;">FINALIZAR PELADA</button>
+        <!-- create bulma div space between flex row -->
+        <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 1rem">
+            <button id="end-match-day" class="button is-danger is-large" style="display: none;">FINALIZAR PELADA</button>
+            <label class="checkbox">
+                <input type="checkbox" id="dev-mode" />
+                Modo desenvolvedor
+            </label>
+        </div>
     </div>
     <div class="container mobile" id="history-container" style="padding: 15px; display: none;">
         <h1>Histórico de Partidas</h1>

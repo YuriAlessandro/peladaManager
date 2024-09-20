@@ -96,14 +96,26 @@ function sortPlayers(a, b) {
     return 0;
 }
 
+$('#dev-mode').change(function() {
+    updatePlayerList();
+})
+
 function updatePlayerList() {
     $("#players").empty();
     const playersToList = getRatingsFromStorage(players)
         .sort((a, b) => sortPlayers(a, b))
 
+    const devMode = $("#dev-mode").is(":checked");
+    if(devMode) {
+        $("#elo-header").show();
+    } else {
+        $("#elo-header").hide();
+    }
+
     playersToList.forEach(player => {
         const playerIsPlayingNow = playingTeams.flat().some(p => p.name === player.name);
         const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+        const elo = devMode ? `${formatter.format(player.mu)}/${formatter.format(player.sigma)}` : '';
         $("#players").append(`
             <tr ${playerIsPlayingNow ? 'class="is-selected"' : ''}>
                 <th>${player.name}</th>
@@ -111,7 +123,7 @@ function updatePlayerList() {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
-                <td>${formatter.format(player.mu)}/${formatter.format(player.sigma)}</td>
+                ${devMode ? `<td>${elo}</td>` : ''}
                 <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
             </tr>`);
     });

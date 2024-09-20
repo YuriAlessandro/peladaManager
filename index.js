@@ -256,6 +256,9 @@ $("#start-match-day").click(function() {
 $("#update-match-day").click(function() {
     maxPoints = parseInt($("#max-points").val());
     playersPerTeam = $("#players-per-team").val();
+    
+    if ($("#auto-switch-teams").is(":checked")) autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
+    else autoSwitchTeamsPoints = 0;
 
     if (playersPerTeam * 2 > players.length) {
         alert("Sem jogadores suficientes para atualizar a partida.");

@@ -1,4 +1,8 @@
+import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
+
 const LOCAL_STORAGE_KEY = "matche_days";
+const LOCAL_STORAGE_ELO_KEY = "players_elo";
+
 let maxPoints;
 let currentMatchMaxPoints;
 let playersPerTeam;
@@ -50,6 +54,33 @@ function getFromLocalStorage() {
     const gameDays = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
 
     return gameDays || [];
+}
+
+function getRatingsFromStorage(players) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    return players.map(player => {
+        return {
+            ...player,
+            ...playersElo[player.name]
+        }
+    });
+}
+
+function storeUpdatedRatings([updatedVictory, updatedLosing]) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    updatedVictory.forEach(player => {
+        playersElo[player.name] = {
+            mu: player.mu,
+            sigma: player.sigma
+        }
+    });
+    updatedLosing.forEach(player => {
+        playersElo[player.name] = {
+            mu: player.mu,
+            sigma: player.sigma
+        }
+    });
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
 }
 
 function sortPlayers(a, b) {
@@ -137,6 +168,13 @@ $("#new-match-day").click(function() {
     $("#new-match-day-button").hide();
 });
 
+function addPlayerToEloSystem(player) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    if(playersElo[player.name]) return;
+    playersElo[player.name] = createInitialRating();
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
+}
+
 function addNewPlayer(){
     const playerName = $("#new-player-name").val();
 
@@ -161,6 +199,7 @@ function addNewPlayer(){
         lastPlayedMatch: 0,
         playing: true,
     });
+    addPlayerToEloSystem({ name: playerName });
 
     $("#player-list").append(`<li>${playerName}</li>`);
 
@@ -176,20 +215,12 @@ $("input").on("keydown",function search(e) {
 });
 
 function generateRandomTeams(players) {
-    const teams = [];
-    // Generate two random teams
-    for (let i = 0; i < 2; i++) {
-        const team = [];
-        for (let j = 0; j < playersPerTeam; j++) {
-            const playerIndex = Math.floor(Math.random() * players.length);
-            const player = players[playerIndex];
-            team.push(player);
-            players.splice(playerIndex, 1);
-        }
-        teams.push(team);
-    }
-
-    return teams;
+    const playersWithElo = getRatingsFromStorage(players);
+    const bestMatch = findBestTeamMatch(playersWithElo);
+    return [
+        bestMatch.teamA,
+        bestMatch.teamB
+    ];
 }
 
 function updateCurrentMatch(teams) {
@@ -273,6 +304,12 @@ $("#update-match-day").click(function() {
 function endMatch(victoryTeam) {
     alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
     matches += 1;
+
+    const victoryTeamRating = getRatingsFromStorage(playingTeams[victoryTeam])
+    const losingTeamRating = getRatingsFromStorage(playingTeams[1 - victoryTeam])
+
+    const updatedRatings = updateRatings(victoryTeamRating, losingTeamRating);
+    storeUpdatedRatings(updatedRatings);
 
     // Add one match to every player and one victory to each player on winning team
     playingTeams[victoryTeam].forEach(player => {
@@ -571,8 +608,22 @@ $("#historic-days").on("click", ".match-historic", function() {
     showFinalPlayerList(playersByWinPercentage);
 });
 
+function initEloSystem(players) {
+    const playersElo = {}
+    players.forEach(player => {
+        const rating = createInitialRating();
+        playersElo[player.name] = rating;
+    })
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
+}
+
 $(document).ready(function (){
     const gameDays = getFromLocalStorage();
+    const hasElo = localStorage.getItem(LOCAL_STORAGE_ELO_KEY);
+
+    if(!hasElo) {
+        initEloSystem(gameDays.flatMap(gameDay => gameDay.players));
+    }
 
     if (gameDays.length > 0) {
         const lastGameDay = gameDays[gameDays.length - 1];

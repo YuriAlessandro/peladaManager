@@ -103,7 +103,7 @@ function updatePlayerList() {
 
     playersToList.forEach(player => {
         const playerIsPlayingNow = playingTeams.flat().some(p => p.name === player.name);
-        const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+        const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
         $("#players").append(`
             <tr ${playerIsPlayingNow ? 'class="is-selected"' : ''}>
                 <th>${player.name}</th>
@@ -336,15 +336,24 @@ function endMatch(victoryTeam) {
     saveOnLocalStorage();
 }
 
+function findPlayerByName(players, name) {
+    return players.find(player => player.name === name);
+}
+
 function startNewMatch(winningPlayers, losingPlayers) {
     $("#match").show();
     $("#score-team-1").text("0");
     $("#score-team-2").text("0");
 
-    const notPlayingPlayers = players.filter(player => !player.playing);
+    const notPlayingPlayers = players
+        .filter(player => !player.playing);
     let newPlayers = [...winningPlayers];
     let playersToPlay = [];
-    let playerList = players.sort((a, b) => sortPlayers(a, b)).filter(player => !winningPlayers.includes(player) && !losingPlayers.includes(player) && !notPlayingPlayers.includes(player));
+    let playerList = players
+        .sort((a, b) => sortPlayers(a, b))
+        .filter(player => !findPlayerByName(winningPlayers, player.name)
+            && !findPlayerByName(losingPlayers, player.name)
+            && !findPlayerByName(notPlayingPlayers, player.name)); 
 
     // Is there any players that didn't play yet?
     if (players.length > playersPerTeam * 2) {
@@ -358,7 +367,7 @@ function startNewMatch(winningPlayers, losingPlayers) {
             for (let i = 0; i < playersPerTeam; i++) {
                 const playerIndex = Math.floor(Math.random() * playersToPlay.length);
                 const player = playersToPlay[playerIndex];
-                if (!newPlayers.includes(player)) {
+                if (!findPlayerByName(newPlayers, player.name)) {
                     newPlayers.push(player);
                 }
             }
@@ -370,7 +379,13 @@ function startNewMatch(winningPlayers, losingPlayers) {
     }
 
     // Remove players that are already playing, get players with less matches but that played the longest time ago
-    const sortedPlayers = players.filter(player => !newPlayers.includes(player) && !winningPlayers.includes(player) && !playerList.includes(player) && !notPlayingPlayers.includes(player)).sort((a, b) => sortPlayers(a, b)).slice(0, (playersPerTeam * 2) - newPlayers.length);
+    const sortedPlayers = players
+        .filter(player => !findPlayerByName(newPlayers, player.name) 
+            && !findPlayerByName(winningPlayers, player.name) 
+            && !findPlayerByName(playerList, player.name) 
+            && !findPlayerByName(notPlayingPlayers, player.name))
+        .sort((a, b) => sortPlayers(a, b))
+        .slice(0, (playersPerTeam * 2) - newPlayers.length);
 
     while (newPlayers.length < playersPerTeam * 2) {
         // Just to be sure, remove any duplicates
@@ -379,7 +394,7 @@ function startNewMatch(winningPlayers, losingPlayers) {
         const playerIndex = Math.floor(Math.random() * sortedPlayers.length);
         const player = sortedPlayers[playerIndex];
 
-        if (!newPlayers.includes(player)) {
+        if (!findPlayerByName(newPlayers, player.name)) {
             newPlayers.push(player);
         }
     }

@@ -98,9 +98,12 @@ function sortPlayers(a, b) {
 
 function updatePlayerList() {
     $("#players").empty();
-    const playersToList = players.sort((a, b) => sortPlayers(a, b));
+    const playersToList = getRatingsFromStorage(players)
+        .sort((a, b) => sortPlayers(a, b))
+
     playersToList.forEach(player => {
         const playerIsPlayingNow = playingTeams.flat().some(p => p.name === player.name);
+        const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
         $("#players").append(`
             <tr ${playerIsPlayingNow ? 'class="is-selected"' : ''}>
                 <th>${player.name}</th>
@@ -108,6 +111,7 @@ function updatePlayerList() {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
+                <td>${formatter.format(player.mu)}</td>
                 <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
             </tr>`);
     });

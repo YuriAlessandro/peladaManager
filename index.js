@@ -230,7 +230,7 @@ $("input").on("keydown",function search(e) {
     }
 });
 
-function generateRandomTeams(players) {
+function generateTeams(players) {
     const playersWithElo = getRatingsFromStorage(players);
     const bestMatch = findBestTeamMatch(playersWithElo);
     return [
@@ -296,7 +296,7 @@ $("#start-match-day").click(function() {
 
 
     saveOnLocalStorage();
-    updateCurrentMatch(generateRandomTeams(firstPlayers));
+    updateCurrentMatch(generateTeams(firstPlayers));
     randomServe();
 });
 
@@ -386,7 +386,7 @@ function startNewMatch(winningPlayers, losingPlayers) {
         }
     } else {
         // I don't have substitutes to play, let's just keep playing
-        updateCurrentMatch(generateRandomTeams(players));
+        updateCurrentMatch(generateTeams(players));
         return;
     }
 
@@ -413,7 +413,7 @@ function startNewMatch(winningPlayers, losingPlayers) {
 
     currentMatchMaxPoints = maxPoints;
     randomServe();
-    updateCurrentMatch(generateRandomTeams(newPlayers));
+    updateCurrentMatch(generateTeams(newPlayers));
     saveOnLocalStorage();
 }
 

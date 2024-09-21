@@ -1,4 +1,8 @@
+import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
+
 const LOCAL_STORAGE_KEY = "matche_days";
+const LOCAL_STORAGE_ELO_KEY = "players_elo";
+
 let maxPoints;
 let currentMatchMaxPoints;
 let playersPerTeam;
@@ -52,6 +56,33 @@ function getFromLocalStorage() {
     return gameDays || [];
 }
 
+function getRatingsFromStorage(players) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    return players.map(player => {
+        return {
+            ...player,
+            ...playersElo[player.name]
+        }
+    });
+}
+
+function storeUpdatedRatings([updatedVictory, updatedLosing]) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    updatedVictory.forEach(player => {
+        playersElo[player.name] = {
+            mu: player.mu,
+            sigma: player.sigma
+        }
+    });
+    updatedLosing.forEach(player => {
+        playersElo[player.name] = {
+            mu: player.mu,
+            sigma: player.sigma
+        }
+    });
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
+}
+
 function sortPlayers(a, b) {
     if (a.lastPlayedMatch === b.lastPlayedMatch) {
         if (a.matches < b.matches) return -1;
@@ -65,11 +96,26 @@ function sortPlayers(a, b) {
     return 0;
 }
 
+$('#dev-mode').change(function() {
+    updatePlayerList();
+})
+
 function updatePlayerList() {
     $("#players").empty();
-    const playersToList = players.sort((a, b) => sortPlayers(a, b));
+    const playersToList = getRatingsFromStorage(players)
+        .sort((a, b) => sortPlayers(a, b))
+
+    const devMode = $("#dev-mode").is(":checked");
+    if(devMode) {
+        $("#elo-header").show();
+    } else {
+        $("#elo-header").hide();
+    }
+
     playersToList.forEach(player => {
         const playerIsPlayingNow = playingTeams.flat().some(p => p.name === player.name);
+        const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+        const elo = devMode ? `${formatter.format(player.mu)}/${formatter.format(player.sigma)}` : '';
         $("#players").append(`
             <tr ${playerIsPlayingNow ? 'class="is-selected"' : ''}>
                 <th>${player.name}</th>
@@ -77,6 +123,7 @@ function updatePlayerList() {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
+                ${devMode ? `<td>${elo}</td>` : ''}
                 <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
             </tr>`);
     });
@@ -137,6 +184,13 @@ $("#new-match-day").click(function() {
     $("#new-match-day-button").hide();
 });
 
+function addPlayerToEloSystem(player) {
+    const playersElo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    if(playersElo[player.name]) return;
+    playersElo[player.name] = createInitialRating();
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
+}
+
 function addNewPlayer(){
     const playerName = $("#new-player-name").val();
 
@@ -161,6 +215,7 @@ function addNewPlayer(){
         lastPlayedMatch: 0,
         playing: true,
     });
+    addPlayerToEloSystem({ name: playerName });
 
     $("#player-list").append(`<li>${playerName}</li>`);
 
@@ -175,21 +230,13 @@ $("input").on("keydown",function search(e) {
     }
 });
 
-function generateRandomTeams(players) {
-    const teams = [];
-    // Generate two random teams
-    for (let i = 0; i < 2; i++) {
-        const team = [];
-        for (let j = 0; j < playersPerTeam; j++) {
-            const playerIndex = Math.floor(Math.random() * players.length);
-            const player = players[playerIndex];
-            team.push(player);
-            players.splice(playerIndex, 1);
-        }
-        teams.push(team);
-    }
-
-    return teams;
+function generateTeams(players) {
+    const playersWithElo = getRatingsFromStorage(players);
+    const bestMatch = findBestTeamMatch(playersWithElo);
+    return [
+        bestMatch.teamA,
+        bestMatch.teamB
+    ];
 }
 
 function updateCurrentMatch(teams) {
@@ -249,7 +296,7 @@ $("#start-match-day").click(function() {
 
 
     saveOnLocalStorage();
-    updateCurrentMatch(generateRandomTeams(firstPlayers));
+    updateCurrentMatch(generateTeams(firstPlayers));
     randomServe();
 });
 
@@ -277,6 +324,12 @@ function endMatch(victoryTeam) {
     alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
     matches += 1;
 
+    const victoryTeamRating = getRatingsFromStorage(playingTeams[victoryTeam])
+    const losingTeamRating = getRatingsFromStorage(playingTeams[1 - victoryTeam])
+
+    const updatedRatings = updateRatings(victoryTeamRating, losingTeamRating);
+    storeUpdatedRatings(updatedRatings);
+
     // Add one match to every player and one victory to each player on winning team
     playingTeams[victoryTeam].forEach(player => {
         const playerIndex = players.findIndex(p => p.name === player.name);
@@ -298,15 +351,24 @@ function endMatch(victoryTeam) {
     saveOnLocalStorage();
 }
 
+function findPlayerByName(players, name) {
+    return players.find(player => player.name === name);
+}
+
 function startNewMatch(winningPlayers, losingPlayers) {
     $("#match").show();
     $("#score-team-1").text("0");
     $("#score-team-2").text("0");
 
-    const notPlayingPlayers = players.filter(player => !player.playing);
+    const notPlayingPlayers = players
+        .filter(player => !player.playing);
     let newPlayers = [...winningPlayers];
     let playersToPlay = [];
-    let playerList = players.sort((a, b) => sortPlayers(a, b)).filter(player => !winningPlayers.includes(player) && !losingPlayers.includes(player) && !notPlayingPlayers.includes(player));
+    let playerList = players
+        .sort((a, b) => sortPlayers(a, b))
+        .filter(player => !findPlayerByName(winningPlayers, player.name)
+            && !findPlayerByName(losingPlayers, player.name)
+            && !findPlayerByName(notPlayingPlayers, player.name)); 
 
     // Is there any players that didn't play yet?
     if (players.length > playersPerTeam * 2) {
@@ -320,19 +382,25 @@ function startNewMatch(winningPlayers, losingPlayers) {
             for (let i = 0; i < playersPerTeam; i++) {
                 const playerIndex = Math.floor(Math.random() * playersToPlay.length);
                 const player = playersToPlay[playerIndex];
-                if (!newPlayers.includes(player)) {
+                if (!findPlayerByName(newPlayers, player.name)) {
                     newPlayers.push(player);
                 }
             }
         }
     } else {
         // I don't have substitutes to play, let's just keep playing
-        updateCurrentMatch(generateRandomTeams(players));
+        updateCurrentMatch(generateTeams(players));
         return;
     }
 
     // Remove players that are already playing, get players with less matches but that played the longest time ago
-    const sortedPlayers = players.filter(player => !newPlayers.includes(player) && !winningPlayers.includes(player) && !playerList.includes(player) && !notPlayingPlayers.includes(player)).sort((a, b) => sortPlayers(a, b)).slice(0, (playersPerTeam * 2) - newPlayers.length);
+    const sortedPlayers = players
+        .filter(player => !findPlayerByName(newPlayers, player.name) 
+            && !findPlayerByName(winningPlayers, player.name) 
+            && !findPlayerByName(playerList, player.name) 
+            && !findPlayerByName(notPlayingPlayers, player.name))
+        .sort((a, b) => sortPlayers(a, b))
+        .slice(0, (playersPerTeam * 2) - newPlayers.length);
 
     while (newPlayers.length < playersPerTeam * 2) {
         // Just to be sure, remove any duplicates
@@ -341,14 +409,14 @@ function startNewMatch(winningPlayers, losingPlayers) {
         const playerIndex = Math.floor(Math.random() * sortedPlayers.length);
         const player = sortedPlayers[playerIndex];
 
-        if (!newPlayers.includes(player)) {
+        if (!findPlayerByName(newPlayers, player.name)) {
             newPlayers.push(player);
         }
     }
 
     currentMatchMaxPoints = maxPoints;
     randomServe();
-    updateCurrentMatch(generateRandomTeams(newPlayers));
+    updateCurrentMatch(generateTeams(newPlayers));
     saveOnLocalStorage();
 }
 
@@ -574,8 +642,22 @@ $("#historic-days").on("click", ".match-historic", function() {
     showFinalPlayerList(playersByWinPercentage);
 });
 
+function initEloSystem(players) {
+    const playersElo = {}
+    players.forEach(player => {
+        const rating = createInitialRating();
+        playersElo[player.name] = rating;
+    })
+    localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
+}
+
 $(document).ready(function (){
     const gameDays = getFromLocalStorage();
+    const hasElo = localStorage.getItem(LOCAL_STORAGE_ELO_KEY);
+
+    if(!hasElo) {
+        initEloSystem(gameDays.flatMap(gameDay => gameDay.players));
+    }
 
     if (gameDays.length > 0) {
         const lastGameDay = gameDays[gameDays.length - 1];

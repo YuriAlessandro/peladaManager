@@ -191,35 +191,41 @@ function addPlayerToEloSystem(player) {
     localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
 }
 
+$('#add-new-player-select').on('select2:select', function (e) {
+    $('.select2-search__field').val('');
+});
+
 function addNewPlayer(){
-    const playerName = $("#new-player-name").val();
+    const selectedPlayers = $("#add-new-player-select").select2('data').map(player => player.text);
 
-    if (!playerName) {
-        alert("Insira um nome para o jogador.");
+    if(selectedPlayers.length === 0) {
+        alert("Selecione ao menos um jogador.");
         return;
     }
 
-    const playerExists = players.some(player => player.name === playerName);
-    if (playerExists) {
-        alert("Jogador já cadastrado. Escolha outro nome.");
+    const repeatedPlayers = selectedPlayers.filter(player => players.some(p => p.name === player));
+
+    if(repeatedPlayers.length > 0) {
+        alert(`Os jogadores ${repeatedPlayers.join(', ')} já estão cadastrados.`);
         return;
     }
 
-    const playerOrder = players.length + 1;
-    players.push({
-        name: playerName,
-        order: playerOrder,
-        matches: 0,
-        victories: 0,
-        defeats: 0,
-        lastPlayedMatch: 0,
-        playing: true,
-    });
-    addPlayerToEloSystem({ name: playerName });
+    selectedPlayers.forEach(player => {
+        const playerOrder = players.length + 1;
+        players.push({
+            name: player,
+            order: playerOrder,
+            matches: 0,
+            victories: 0,
+            defeats: 0,
+            lastPlayedMatch: 0,
+            playing: true,
+        });
+        addPlayerToEloSystem({ name: player });
+        $("#player-list").append(`<li>${player}</li>`);
+    })
 
-    $("#player-list").append(`<li>${playerName}</li>`);
-
-    $("#new-player-name").val("");
+    $("#add-new-player-select").val(null).trigger('change');
     updatePlayerList();
 }
 
@@ -651,12 +657,40 @@ function initEloSystem(players) {
     localStorage.setItem(LOCAL_STORAGE_ELO_KEY, JSON.stringify(playersElo));
 }
 
+function initPlayersSelect(players) {
+    $("#add-new-player-select").select2({
+        tags: true,
+        allowClear: true,
+        multiple: true,
+        closeOnSelect: false,
+        placeholder: "Selecione os jogadores",
+        language: {
+            noResults: function() {
+                return "Nenhum jogador encontrado. Adicione um novo jogador.";
+            }
+        },
+        data: players.map(player => ({
+            id: player.name,
+            text: player.name
+        }))
+    })
+}
+
 $(document).ready(function (){
     const gameDays = getFromLocalStorage();
     const hasElo = localStorage.getItem(LOCAL_STORAGE_ELO_KEY);
-
+    const allPlayers = gameDays
+        .flatMap(gameDay => gameDay.players)
+        .filter((player, index, self) => self.findIndex(p => p.name === player.name) === index);
+    
+    initPlayersSelect(
+        allPlayers
+            .filter(player => !players.some(p => p.name === player.name))
+            .sort((a, b) => a.name.localeCompare(b.name))
+    );
+    
     if(!hasElo) {
-        initEloSystem(gameDays.flatMap(gameDay => gameDay.players));
+        initEloSystem(allPlayers);
     }
 
     if (gameDays.length > 0) {

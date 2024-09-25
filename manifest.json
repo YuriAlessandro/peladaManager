@@ -6,7 +6,7 @@
     "start_url": "https://yurialessandro.github.io/peladaManager/",
     "background_color": "#2f3d58",
     "theme_color": "#2f3d58",
-    "orientation": "portrait",
+    "orientation": "any",
     "display": "standalone",
     "icons": [
         {

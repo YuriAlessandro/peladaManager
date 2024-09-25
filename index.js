@@ -302,6 +302,7 @@ $("#start-match-day").click(function() {
 
 $("#update-match-day").click(function() {
     maxPoints = parseInt($("#max-points").val());
+    currentMatchMaxPoints = maxPoints;
     playersPerTeam = $("#players-per-team").val();
     
     if ($("#auto-switch-teams").is(":checked")) autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
@@ -539,6 +540,8 @@ $("#change-match-day").click(function() {
     $("#all-player-list").hide();
     $("#start-match-day").hide();
     $("#update-match-day").show();
+
+    $("#player-list").append(`<p>${players.length} jogadores cadastrados</p>`);
 
     players.forEach(player => {
         $("#player-list").append(`<li>${player.name}</li>`);

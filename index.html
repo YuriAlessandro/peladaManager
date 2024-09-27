@@ -4,6 +4,41 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
     <script src="https://kit.fontawesome.com/15fce56598.js" crossorigin="anonymous"></script>
+    <style>
+        @font-face {
+            font-family: Digital7;
+            src: url("assets/digital_7.ttf");
+        }
+        .score-container {
+            height: 5.2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .score-container p {
+            padding: 0;
+            margin: 0;
+            font-size: 3em;
+            font-family: Digital7;
+            color: white;
+            z-index: 0;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            text-align: left;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            min-width: 0.9em;
+        }
+        .score-container p::before {
+            content: "88";
+            position: absolute;
+            color: #cecece;
+            opacity: 0.2;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
 
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
@@ -62,7 +97,9 @@
                     <button id="undo-1" class="undo-point button is-danger is-large"><i class="fa-solid fa-undo"></i></button>
                     <article class="message is-info score-point" style="cursor: pointer; margin-top: 15px;" id="score-1">
                         <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-1"></i></div>
-                        <div class="message-body is-size-1" id="score-team-1">0</div>
+                        <div class="message-body is-size-1 score-container">
+                            <p id="score-team-1">0</p>
+                        </div>
                     </article>
                     <ul id="team-1-players"></ul>
                 </div>
@@ -74,7 +111,9 @@
                     <button id="undo-2" class="undo-point button is-danger is-large"><i class="fa-solid fa-undo"></i></button>
                     <article class="message is-danger score-point" style="cursor: pointer; margin-top: 15px;" id="score-2">
                         <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-2"></i></div>
-                        <div class="message-body is-size-1" id="score-team-2">0</div>
+                        <div class="message-body is-size-1 score-container">
+                            <p id="score-team-2">0</p>
+                        </div>
                     </article>
                     <ul id="team-2-players"></ul>
                 </div>

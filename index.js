@@ -358,8 +358,8 @@ function findPlayerByName(players, name) {
 
 function startNewMatch(winningPlayers, losingPlayers) {
     $("#match").show();
-    $("#score-team-1").text("0");
-    $("#score-team-2").text("0");
+    $("#score-team-1").text("00");
+    $("#score-team-2").text("00");
 
     const notPlayingPlayers = players
         .filter(player => !player.playing);
@@ -433,6 +433,8 @@ function randomServe() {
     }
 }
 
+const formatScore = (score) => String(score).padStart(2, 0)
+
 $(".score-point").click(function() {
     const teamIndex = $(this).attr("id");
     
@@ -441,12 +443,12 @@ $(".score-point").click(function() {
 
     if (teamIndex === "score-1") {
         team1Score += 1;
-        $("#score-team-1").text(team1Score);
+        $("#score-team-1").text(formatScore(team1Score));
         $("#serving-1").show();
         $("#serving-2").hide();
     } else if (teamIndex === "score-2") {
         team2Score += 1;
-        $("#score-team-2").text(team2Score);
+        $("#score-team-2").text(formatScore(team2Score));
         $("#serving-1").hide();
         $("#serving-2").show();
     }

@@ -62,8 +62,8 @@ function updateGameDay(gameDay, isLive = true) {
 
 
 
-async function saveOnLocalStorage(isLive = true) {
-    const allGames = await getFromLocalStorage();
+async function upsertGameDay(isLive = true) {
+    const allGames = await getGameDays();
     
     if(!currentId) {
         return createNewGameDay(isLive)
@@ -76,24 +76,24 @@ async function saveOnLocalStorage(isLive = true) {
     } 
 }
 
-function getFromLocalStorage() {
-    return fetch('http://localhost:4000/game-days')
-    .then(response => response.json())
+async function getGameDays() {
+    const response = await fetch('http://localhost:4000/game-days');
+    return await response.json();
 }
 
-function getRatingsFromStorage(players) {
+async function getRatingsFromStorage(players) {
     const names = players.map(player => player.name).join(',');
     const params = new URLSearchParams();
     params.append('name', names);
-    return fetch(`http://localhost:4000/players?${params.toString()}`)
-    .then(response => response.json())
-    .then(ratings => players.map(player => {
-        const rating = ratings.find(rating => rating.name === player.name);
+    const response = await fetch(`http://localhost:4000/players?${params.toString()}`);
+    const ratings = await response.json();
+    return players.map(player_1 => {
+        const rating = ratings.find(rating_1 => rating_1.name === player_1.name);
         return {
-            ...player,
+            ...player_1,
             ...rating
-        }
-    }))
+        };
+    });
 }
 
 function storeUpdatedRatings([updatedVictory, updatedLosing]) {
@@ -206,7 +206,7 @@ $("#all-player-list").on("click", ".remove-player", function() {
     players[playerIndex].playing = !players[playerIndex].playing;
     
     updatePlayerList();
-    saveOnLocalStorage();
+    upsertGameDay();
 });
 
 $("#new-match-day").click(function() {
@@ -330,7 +330,7 @@ $("#start-match-day").click(async function() {
     
     
     updateCurrentMatch(await generateTeams(firstPlayers));
-    saveOnLocalStorage();
+    upsertGameDay();
     randomServe();
 });
 
@@ -352,7 +352,7 @@ $("#update-match-day").click(function() {
     $("#new-match-day-form").hide();
     $("#player-list").hide();
     updatePlayerList();
-    saveOnLocalStorage();
+    upsertGameDay();
 });
 
 async function endMatch(victoryTeam) {
@@ -384,7 +384,7 @@ async function endMatch(victoryTeam) {
     
     updatePlayerList();
     $("#match").hide();
-    saveOnLocalStorage();
+    upsertGameDay();
 }
 
 function findPlayerByName(players, name) {
@@ -453,7 +453,7 @@ async function startNewMatch(winningPlayers, losingPlayers) {
     currentMatchMaxPoints = maxPoints;
     randomServe();
     updateCurrentMatch(await generateTeams(newPlayers));
-    saveOnLocalStorage();
+    upsertGameDay();
 }
 
 function randomServe() {
@@ -504,7 +504,7 @@ $(".score-point").click(async function() {
         const totalPoints = team1Score + team2Score;
         if (totalPoints % autoSwitchTeamsPoints === 0) swapTeams();
     }
-    saveOnLocalStorage();
+    upsertGameDay();
 });
 
 $(".undo-point").click(function() {
@@ -521,7 +521,7 @@ $(".undo-point").click(function() {
         $("#score-team-2").text(team2Score >= 0 ? team2Score : 0);
     }
     
-    saveOnLocalStorage();
+    upsertGameDay();
 });
 
 function getPlayersByWinPercentage() {
@@ -555,7 +555,7 @@ $("#end-match-day").click(function() {
     const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
     
     if (confirm) {
-        saveOnLocalStorage(false);
+        upsertGameDay(false);
         $("#new-match-day").hide();
         $("#new-match-day-form").hide();
         $("#match").hide();
@@ -603,7 +603,7 @@ $("#end-current-match").click(function() {
         startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
     }
     
-    saveOnLocalStorage();
+    upsertGameDay();
 });
 
 function swapTeams() {
@@ -627,7 +627,7 @@ function swapTeams() {
     
     alert('Times invertidos!');
     updateCurrentMatch(playingTeams);
-    saveOnLocalStorage();
+    upsertGameDay();
 }
 
 $("#swap-current-match").click(function() {
@@ -648,7 +648,7 @@ $("#show-historic").click(async function() {
     $("#history-container").show();
     $("#new-match-day-button").hide();
     
-    const gameDays = (await getFromLocalStorage()).sort((a, b) => b.id - a.id);
+    const gameDays = (await getGameDays()).sort((a, b) => b.id - a.id);
     $("#historic").empty();
     const date = gameDay.playedOn
     ? new Date(gameDay.playedOn).toLocaleString()
@@ -665,7 +665,7 @@ $("#show-historic").click(async function() {
 
 $("#historic-days").on("click", ".match-historic", async function() {
     const gameId = $(this).attr("id");
-    const gameDays = await getFromLocalStorage();
+    const gameDays = await getGameDays();
     const gameDay = gameDays.find(gameDay => gameDay.id == gameId);
     
     maxPoints = gameDay.maxPoints;
@@ -686,7 +686,7 @@ $("#historic-days").on("click", ".match-historic", async function() {
 
 
 $(document).ready(async function (){
-    const gameDays = await getFromLocalStorage();
+    const gameDays = await getGameDays();
     if (gameDays.length > 0) {
         const lastGameDay = gameDays[gameDays.length - 1];
         

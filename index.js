@@ -1,7 +1,8 @@
+import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
 import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
-const LOCAL_STORAGE_KEY = "matche_days";
 const LOCAL_STORAGE_ELO_KEY = "players_elo";
-
+const LOCAL_STORAGE_KEY = "matche_days";
+const socket = io('http://localhost:4000')
 let maxPoints;
 let currentMatchMaxPoints;
 let playersPerTeam;
@@ -14,7 +15,39 @@ let autoSwitchTeamsPoints = 0;
 let joinCode = '';
 let courtId = null
 
-const localStorage = window.localStorage;
+socket.on('game-day:updated',  async () => {
+    const activeGame = await getActiveGameDay();
+    console.log('game-day:updated', activeGame)
+    if(!activeGame) {
+        currentId = null;
+        renderEndGameDay();
+        return
+    }
+
+    maxPoints = activeGame.maxPoints;
+    playersPerTeam = activeGame.playersPerTeam;
+    players = activeGame.players;
+    playingTeams = activeGame.playingTeams;
+    otherPlayingTeams = activeGame.otherPlayingTeams;
+    matches = activeGame.matches;
+    currentId = activeGame.id;
+    joinCode = activeGame.joinCode;
+    courtId = activeGame.courtId || null
+
+    if(playingTeams.length === 0) {
+        playingTeams = await generateTeams(players);
+    }
+    
+    currentMatchMaxPoints = maxPoints;
+    updatePlayerList();
+    updateCurrentMatch(playingTeams);
+    $("#new-match-day").hide();
+    $("#new-match-day-form").hide();
+    $("#new-match-day-button").hide();
+    $("#match").show();
+    $("#all-player-list").show();
+    $("#end-match-day").show();
+})
 
 async function getActiveGameDay() {
     try {
@@ -417,15 +450,21 @@ $("#start-match-day").click(async function() {
         return;
     }
     
-    $("#all-player-list").show();
     const playersInOtherTeams = otherPlayingTeams.flat();
     const firstPlayers = players
     .filter(p => !findPlayerByName(playersInOtherTeams, p.name))
     .slice(0, playersPerTeam * 2);
+    if(firstPlayers.length < playersPerTeam * 2) {
+        alert("Não há jogadores suficientes para começar a partida.");
+        return;
+    }
     await upsertGameDay();
     updateCurrentMatch(await generateTeams(firstPlayers));
     await upsertGameDay();
     randomServe();
+    socket.emit('join', currentId);
+    $("#all-player-list").show();
+
 });
 
 $("#copy-join-code").click(function() {
@@ -663,17 +702,21 @@ function showFinalPlayerList(playersToDisplay) {
     });
 }
 
-$("#end-match-day").click(function() {
+function renderEndGameDay() {
+    $("#new-match-day").hide();
+    $("#new-match-day-form").hide();
+    $("#match").hide();
+    $("#end-match-day").hide();
+    const playersByWinPercentage = getPlayersByWinPercentage();
+    showFinalPlayerList(playersByWinPercentage);
+}
+
+$("#end-match-day").click(async function() {
     const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
     
     if (confirm) {
-        upsertGameDay(false);
-        $("#new-match-day").hide();
-        $("#new-match-day-form").hide();
-        $("#match").hide();
-        $(this).hide();
-        const playersByWinPercentage = getPlayersByWinPercentage();
-        showFinalPlayerList(playersByWinPercentage);
+        await upsertGameDay(false);
+        renderEndGameDay();
     }
     
 });
@@ -766,7 +809,7 @@ $("#show-historic").click(async function() {
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
             <div class='cell match-historic' id='${gameDay.id}'>
-                <button class='button is-large'>Jogo de ${new Date(gameDay.playedOn).toString()}</button>
+                <button class='button is-large'>Jogo de ${new Date(gameDay.playedOn).toDateString()}</button>
             </div>`
         );
     });
@@ -826,5 +869,6 @@ $(document).ready(async function (){
         $("#match").show();
         $("#all-player-list").show();
         $("#end-match-day").show();
+        socket.emit('join', currentId);
     }
 });

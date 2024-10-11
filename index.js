@@ -7,10 +7,12 @@ let currentMatchMaxPoints;
 let playersPerTeam;
 let players = [];
 let playingTeams = [];
+let otherPlayingTeams = [];
 let matches = 0;
 let currentId = 0;
 let autoSwitchTeamsPoints = 0;
 let joinCode = '';
+let courtId = null
 
 const localStorage = window.localStorage;
 
@@ -78,7 +80,7 @@ async function joinGameDay(joinCode) {
 
 async function updateGameDay(isLive = true) {
     try {
-        const response = await fetch(`http://localhost:4000/game-days/${currentId}`, {
+        const response = await fetch(`http://localhost:4000/sessions/game-day`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -87,6 +89,7 @@ async function updateGameDay(isLive = true) {
             body: JSON.stringify({
                 maxPoints,
                 playersPerTeam,
+                playingTeams,
                 players,
                 matches,
                 isLive,
@@ -171,32 +174,35 @@ $('#dev-mode').change(function() {
 })
 
 $("#join-code-input").on("input", function search(e) {
-    // all to upper case
     $("#join-code-input").val(e.target.value.toUpperCase());
 })
 
 $("#join-match-day-form").submit(async function(e) {
     e.preventDefault();
-    const joinCode = $("#join-code-input").val();
-    const gameDay = await joinGameDay(joinCode);
-    if(!gameDay) {
+    const joinInputVal = $("#join-code-input").val();
+    const data = await joinGameDay(joinInputVal);
+    if(!data) {
         alert("Código inválido");
         return;
     }
-    maxPoints = gameDay.maxPoints;
-    playersPerTeam = gameDay.playersPerTeam;
-    players = gameDay.players;
-    playingTeams = gameDay.playingTeams;
-    matches = gameDay.matches;
-    currentId = gameDay.id;
-    updatePlayerList();
-    updateCurrentMatch(playingTeams);
-    $("#new-match-day").hide();
-    $("#new-match-day-form").hide();
+    courtId = data.courtId
+    maxPoints = data.maxPoints;
+    playersPerTeam = data.playersPerTeam;
+    players = data.players;
+    playingTeams = data.playingTeams;
+    otherPlayingTeams = data.otherPlayingTeams;
+    matches = data.matches;
+    joinCode = data.joinCode;
+    currentId = data.id;
+    $('#players-per-team').val(playersPerTeam);
+    $('#max-points').val(maxPoints);
+    $('#auto-switch-teams-points').val(data.autoSwitchTeamsPoints);
+    $('#auto-switch-teams').prop('checked', data.autoSwitchTeamsPoints > 0);
+    $("#new-match-day-form").show();
     $("#new-match-day-button").hide();
-    $("#match").show();
-    $("#all-player-list").show();
-    $("#end-match-day").show();
+    players.forEach(player => {
+        $("#player-list").append(`<li>${player.name}</li>`);
+    })
 })
 
 async function updatePlayerList() {
@@ -211,18 +217,32 @@ async function updatePlayerList() {
     }
     
     const rows = playersToList.map(player => {
-        const playerIsPlayingNow = playingTeams.flat().some(p => p.name === player.name);
+        const isPlayingHere = playingTeams.flat().some(p => p.name === player.name);
+        const isPlayingSomewhereElse = otherPlayingTeams.flat().some(p => p.name === player.name);
+        const rowClass = isPlayingHere ? 'is-selected' : isPlayingSomewhereElse ? 'is-selected is-warning' : '';
         const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
         const elo = devMode ? `${formatter.format(player.mu)}/${formatter.format(player.sigma)}` : '';
+        const playingClass = isPlayingSomewhereElse
+            ? ''
+            : player.playing
+                ? 'remove-player is-clickable'
+                : 'is-danger remove-player is-clickable';
         return `
-        <tr ${playerIsPlayingNow ? 'class="is-selected"' : ''}>
+        <tr class="${rowClass}">
             <th>${player.name}</th>
             <td>${player.matches}</td>
             <td>${player.victories}</td>
             <td>${player.defeats}</td>
             <td>${player.lastPlayedMatch}</td>
             ${devMode ? `<td>${elo}</td>` : ''}
-            <td ${!player.playing ? 'class="is-danger remove-player"' : 'class="remove-player"'} style="cursor: pointer">${player.playing ? 'Sim ' : 'Não'} ${playerIsPlayingNow ? '<i class="fa-solid fa-repeat"></i>' : '<i class="fa-solid fa-volleyball"></i>'}</td>
+            <td class="${playingClass}">
+                ${player.playing 
+                    ? 'Sim ' 
+                    : 'Não'
+                } ${isPlayingSomewhereElse || !isPlayingHere 
+                    ? '<i class="fa-solid fa-volleyball"></i>' 
+                    : '<i class="fa-solid fa-repeat"></i>' 
+                }</td>
         </tr>`
     }).join('');
     
@@ -233,11 +253,13 @@ $("#all-player-list").on("click", ".remove-player", function() {
     const playerName = $(this).parent().find("th").text();
     
     // First check if it's a playing player
-    if (playingTeams.flat().some(player => player.name === playerName)) {
+    const allPlaying = playingTeams.flat().concat(otherPlayingTeams.flat());
+    if (allPlaying.some(player => player.name === playerName)) {
         const playerOrder = players.sort((a,b) => sortPlayers(a, b));
         
         // Get all players that are not playing
-        const notOnCurrentMatchPlayers = playerOrder.filter(player => !playingTeams.flat().some(p => p.name === player.name) && player.playing);
+        const notOnCurrentMatchPlayers = playerOrder
+        .filter(player => !allPlaying.some(p => p.name === player.name) && player.playing);
         
         // Get next player not playing on list
         let nextPlayer = notOnCurrentMatchPlayers.find(player => player.name !== playerName);
@@ -280,7 +302,6 @@ $("#all-player-list").on("click", ".remove-player", function() {
 
 $("#new-match-day").click(function() {
     $("#new-match-day-form").show();
-    $("#new-match-day").hide();
     $("#new-match-day-button").hide();
 });
 
@@ -397,11 +418,13 @@ $("#start-match-day").click(async function() {
     }
     
     $("#all-player-list").show();
-    const firstPlayers = players.slice(0, playersPerTeam * 2);
-    
-    
+    const playersInOtherTeams = otherPlayingTeams.flat();
+    const firstPlayers = players
+    .filter(p => !findPlayerByName(playersInOtherTeams, p.name))
+    .slice(0, playersPerTeam * 2);
+    await upsertGameDay();
     updateCurrentMatch(await generateTeams(firstPlayers));
-    upsertGameDay();
+    await upsertGameDay();
     randomServe();
 });
 
@@ -468,51 +491,41 @@ function findPlayerByName(players, name) {
     return players.find(player => player.name === name);
 }
 
-async function startNewMatch(winningPlayers, losingPlayers) {
-    $("#match").show();
-    $("#score-team-1").text("0");
-    $("#score-team-2").text("0");
-    
+function findNextMatchPlayers(winners, losers) {
     const notPlayingPlayers = players
     .filter(player => !player.playing);
-    let newPlayers = [...winningPlayers];
+    let newPlayers = [...winners];
     let playersToPlay = [];
     let playerList = players
     .sort((a, b) => sortPlayers(a, b))
-    .filter(player => !findPlayerByName(winningPlayers, player.name)
-    && !findPlayerByName(losingPlayers, player.name)
-    && !findPlayerByName(notPlayingPlayers, player.name)); 
+    .filter(player => !findPlayerByName(winners, player.name)
+    && !findPlayerByName(losers, player.name)
+    && !findPlayerByName(notPlayingPlayers, player.name)
+    && !findPlayerByName(otherPlayingTeams.flat(), player.name));
     
     // Is there any players that didn't play yet?
-    if (players.length > playersPerTeam * 2) {
-        // I have substitutes to play
-        playersToPlay = playerList.slice(0, playersPerTeam);
-        
-        if (playersToPlay.length <= playersPerTeam) {
-            newPlayers = newPlayers.concat(playersToPlay);
-        } else if (playersToPlay.length > playersPerTeam) {
-            // Select random players to play
-            for (let i = 0; i < playersPerTeam; i++) {
-                const playerIndex = Math.floor(Math.random() * playersToPlay.length);
-                const player = playersToPlay[playerIndex];
-                if (!findPlayerByName(newPlayers, player.name)) {
-                    newPlayers.push(player);
-                }
+    // I have substitutes to play
+    playersToPlay = playerList.slice(0, playersPerTeam);
+    
+    if (playersToPlay.length <= playersPerTeam) {
+        newPlayers = newPlayers.concat(playersToPlay);
+    } else if (playersToPlay.length > playersPerTeam) {
+        // Select random players to play
+        for (let i = 0; i < playersPerTeam; i++) {
+            const playerIndex = Math.floor(Math.random() * playersToPlay.length);
+            const player = playersToPlay[playerIndex];
+            if (!findPlayerByName(newPlayers, player.name)) {
+                newPlayers.push(player);
             }
         }
-    } else {
-        // I don't have substitutes to play, let's just keep playing
-        updateCurrentMatch(await generateTeams(players));
-        return;
     }
     
     // Remove players that are already playing, get players with less matches but that played the longest time ago
     const sortedPlayers = players
-    .filter(player => !findPlayerByName(newPlayers, player.name) 
-    && !findPlayerByName(winningPlayers, player.name) 
-    && !findPlayerByName(playerList, player.name) 
-    && !findPlayerByName(notPlayingPlayers, player.name))
-    .sort((a, b) => sortPlayers(a, b))
+    .filter(player => !findPlayerByName(newPlayers, player.name))
+    .filter(player => !findPlayerByName(winners, player.name))
+    .filter(player => !findPlayerByName(notPlayingPlayers, player.name))
+    .filter(player => !findPlayerByName(otherPlayingTeams.flat(), player.name))
     .slice(0, (playersPerTeam * 2) - newPlayers.length);
     
     while (newPlayers.length < playersPerTeam * 2) {
@@ -520,6 +533,7 @@ async function startNewMatch(winningPlayers, losingPlayers) {
         newPlayers = newPlayers.filter((player, index, self) => self.findIndex(p => p.name === player.name) === index);
         
         const playerIndex = Math.floor(Math.random() * sortedPlayers.length);
+        if(playerIndex < 0) continue;
         const player = sortedPlayers[playerIndex];
         
         if (!findPlayerByName(newPlayers, player.name)) {
@@ -527,9 +541,30 @@ async function startNewMatch(winningPlayers, losingPlayers) {
         }
     }
     
+    return newPlayers;
+}
+
+
+async function startNewMatch(winningPlayers, losingPlayers) {
+    $("#match").show();
+    $("#score-team-1").text("0");
+    $("#score-team-2").text("0");
+
+    if(players.length === playersPerTeam * 2) {
+        updateCurrentMatch(await generateTeams(players));
+        return;
+    }
+
+    if(players.length < playersPerTeam * 2) {
+        alert("Não há jogadores suficientes para começar uma nova partida");
+        return;
+    }
+
+    const nextMatchPlayers = findNextMatchPlayers(winningPlayers, losingPlayers);
+    
     currentMatchMaxPoints = maxPoints;
     randomServe();
-    updateCurrentMatch(await generateTeams(newPlayers));
+    updateCurrentMatch(await generateTeams(nextMatchPlayers));
     upsertGameDay();
 }
 
@@ -727,14 +762,11 @@ $("#show-historic").click(async function() {
     
     const gameDays = await getGameDays()
     $("#historic").empty();
-    const date = gameDay.playedOn
-    ? new Date(gameDay.playedOn).toLocaleString()
-    : new Date("2024-09-07").toLocaleString();
     
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
             <div class='cell match-historic' id='${gameDay.id}'>
-                <button class='button is-large'>[${gameDay.id}] Jogo de ${date}</button>
+                <button class='button is-large'>Jogo de ${new Date(gameDay.playedOn).toString()}</button>
             </div>`
         );
     });
@@ -768,15 +800,22 @@ $(document).ready(async function (){
         currentId = null;
         return
     }
+    console.log('active', activeGame)
 
     if (activeGame.isLive) {
         maxPoints = activeGame.maxPoints;
         playersPerTeam = activeGame.playersPerTeam;
         players = activeGame.players;
         playingTeams = activeGame.playingTeams;
+        otherPlayingTeams = activeGame.otherPlayingTeams;
         matches = activeGame.matches;
         currentId = activeGame.id;
         joinCode = activeGame.joinCode;
+        courtId = activeGame.courtId || null
+
+        if(playingTeams.length === 0) {
+            playingTeams = await generateTeams(players);
+        }
         
         currentMatchMaxPoints = maxPoints;
         updatePlayerList();

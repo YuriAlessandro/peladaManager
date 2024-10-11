@@ -2,7 +2,9 @@ import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
 import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
 const LOCAL_STORAGE_ELO_KEY = "players_elo";
 const LOCAL_STORAGE_KEY = "matche_days";
-const socket = io('http://localhost:4000')
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://volei-api.herokuapp.com'
+
+const socket = io(API_URL);
 let maxPoints;
 let currentMatchMaxPoints;
 let playersPerTeam;
@@ -18,7 +20,6 @@ const localStorage = window.localStorage;
 
 socket.on('game-day:updated',  async () => {
     const activeGame = await getActiveGameDay();
-    console.log('game-day:updated', activeGame)
     if(!activeGame) {
         currentId = null;
         renderEndGameDay();
@@ -40,7 +41,6 @@ socket.on('game-day:updated',  async () => {
     }
     
     currentMatchMaxPoints = maxPoints;
-    updatePlayerList();
     updateCurrentMatch(playingTeams);
     $("#new-match-day").hide();
     $("#new-match-day-form").hide();
@@ -52,7 +52,7 @@ socket.on('game-day:updated',  async () => {
 
 async function getActiveGameDay() {
     try {
-        const response = await fetch('http://localhost:4000/sessions/game-day', {
+        const response = await fetch(`${API_URL}/sessions/game-day`, {
             credentials: 'include'
         });
         if(!response.ok) {
@@ -76,7 +76,7 @@ async function createNewGameDay(isLive = true) {
             autoSwitchTeamsPoints,
             playedOn: new Date(),
         }
-        const response = await fetch('http://localhost:4000/game-days', {
+        const response = await fetch(`${API_URL}/game-days`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -132,6 +132,10 @@ async function updateGameDay(isLive = true) {
             })
         })
 
+        if(response.ok){
+            socket.emit("game-day:updated", currentId);
+        }
+
         return response.ok;
     } catch {
         return false
@@ -149,7 +153,7 @@ async function upsertGameDay(isLive = true) {
 }
 
 async function getGameDays() {
-    const response = await fetch('http://localhost:4000/game-days', {
+    const response = await fetch(`${API_URL}/game-days`, {
         credentials: 'include'
     });
     return await response.json();
@@ -180,7 +184,7 @@ function storeUpdatedRatings([updatedVictory, updatedLosing]) {
         sigma: player.sigma
     }));
     
-    return fetch('http://localhost:4000/players/bulk', {
+    return fetch(`${API_URL}/players/bulk`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
@@ -283,7 +287,7 @@ async function updatePlayerList() {
     $("#players").html(rows)
 }
 
-$("#all-player-list").on("click", ".remove-player", function() {
+$("#all-player-list").on("click", ".remove-player", async function() {
     const playerName = $(this).parent().find("th").text();
     
     // First check if it's a playing player
@@ -330,8 +334,8 @@ $("#all-player-list").on("click", ".remove-player", function() {
     const playerIndex = players.findIndex(player => player.name === playerName);
     players[playerIndex].playing = !players[playerIndex].playing;
     
-    updatePlayerList();
-    upsertGameDay();
+    await updatePlayerList();
+    await upsertGameDay();
 });
 
 $("#new-match-day").click(function() {
@@ -369,7 +373,7 @@ function addNewPlayer(){
     
     $("#new-player-name").val("");
     updatePlayerList();
-    return fetch('http://localhost:4000/players', {
+    return fetch(`${API_URL}/players`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
@@ -398,7 +402,7 @@ async function generateTeams(players) {
     ];
 }
 
-function updateCurrentMatch(teams) {
+async function updateCurrentMatch(teams) {
     $("#team-1-players").empty();
     $("#team-2-players").empty();
     
@@ -421,7 +425,7 @@ function updateCurrentMatch(teams) {
     $("#match").show();
     
     playingTeams = teams;
-    updatePlayerList();
+    await updatePlayerList();
 }
 
 $("#start-match-day").click(async function() {
@@ -474,7 +478,7 @@ $("#copy-join-code").click(function() {
     alert("Código copiado para a área de transferência.");
 });
 
-$("#update-match-day").click(function() {
+$("#update-match-day").click(async function() {
     maxPoints = parseInt($("#max-points").val());
     currentMatchMaxPoints = maxPoints;
     playersPerTeam = $("#players-per-team").val();
@@ -491,8 +495,8 @@ $("#update-match-day").click(function() {
     $("#match").show();
     $("#new-match-day-form").hide();
     $("#player-list").hide();
-    updatePlayerList();
-    upsertGameDay();
+    await updatePlayerList();
+    await upsertGameDay();
 });
 
 async function endMatch(victoryTeam) {
@@ -522,13 +526,18 @@ async function endMatch(victoryTeam) {
     });
     
     
-    updatePlayerList();
     $("#match").hide();
-    upsertGameDay();
 }
 
 function findPlayerByName(players, name) {
     return players.find(player => player.name === name);
+}
+
+function findAvailablePlayers(winners) {
+    return players
+    .filter(player => player.playing)
+    .filter(player => !findPlayerByName(winners, player.name))
+    .filter(player => !findPlayerByName(otherPlayingTeams.flat(), player.name))
 }
 
 function findNextMatchPlayers(winners, losers) {
@@ -561,12 +570,8 @@ function findNextMatchPlayers(winners, losers) {
     }
     
     // Remove players that are already playing, get players with less matches but that played the longest time ago
-    const sortedPlayers = players
-    .filter(player => !findPlayerByName(newPlayers, player.name))
-    .filter(player => !findPlayerByName(winners, player.name))
-    .filter(player => !findPlayerByName(notPlayingPlayers, player.name))
-    .filter(player => !findPlayerByName(otherPlayingTeams.flat(), player.name))
-    .slice(0, (playersPerTeam * 2) - newPlayers.length);
+    const sortedPlayers = findAvailablePlayers(winners)
+        .slice(0, (playersPerTeam * 2) - newPlayers.length);
     
     while (newPlayers.length < playersPerTeam * 2) {
         // Just to be sure, remove any duplicates
@@ -589,23 +594,22 @@ async function startNewMatch(winningPlayers, losingPlayers) {
     $("#match").show();
     $("#score-team-1").text("0");
     $("#score-team-2").text("0");
-
-    if(players.length === playersPerTeam * 2) {
-        updateCurrentMatch(await generateTeams(players));
-        return;
-    }
-
+    
     if(players.length < playersPerTeam * 2) {
         alert("Não há jogadores suficientes para começar uma nova partida");
         return;
     }
 
-    const nextMatchPlayers = findNextMatchPlayers(winningPlayers, losingPlayers);
-    
+    const availablePlayers = findAvailablePlayers(winningPlayers);
+
+    const nextMatchPlayers = availablePlayers.length === playersPerTeam * 2
+        ? await generateTeams(availablePlayers)
+        : findNextMatchPlayers(winningPlayers, losingPlayers);
+
     currentMatchMaxPoints = maxPoints;
     randomServe();
     updateCurrentMatch(await generateTeams(nextMatchPlayers));
-    upsertGameDay();
+    await upsertGameDay();
 }
 
 function randomServe() {
@@ -646,17 +650,16 @@ $(".score-point").click(async function() {
     
     if (team1Score >= currentMatchMaxPoints && diff >= 2) {
         await endMatch(0);
-        startNewMatch(playingTeams[0], playingTeams[1]);
+        await startNewMatch(playingTeams[0], playingTeams[1]);
     } else if (team2Score >= currentMatchMaxPoints && diff >= 2) {
         await endMatch(1);
-        startNewMatch(playingTeams[1], playingTeams[0]);
+        await startNewMatch(playingTeams[1], playingTeams[0]);
     }
     
     if (autoSwitchTeamsPoints > 0) {
         const totalPoints = team1Score + team2Score;
         if (totalPoints % autoSwitchTeamsPoints === 0) swapTeams();
     }
-    upsertGameDay();
 });
 
 $(".undo-point").click(function() {
@@ -828,7 +831,7 @@ $("#historic-days").on("click", ".match-historic", async function() {
     matches = gameDay.matches;
     currentId = gameDay.id;
     
-    updatePlayerList();
+    await updatePlayerList();
     
     const playersByWinPercentage = getPlayersByWinPercentage();
     
@@ -840,7 +843,7 @@ $("#historic-days").on("click", ".match-historic", async function() {
 
 async function migrateToDatabase(players, gameDays) {
     try {
-        const response = await fetch('http://localhost:4000/migrations/to-database', {
+        const response = await fetch(`${API_URL}/migrations/to-database`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -893,7 +896,7 @@ $(document).ready(async function (){
         }
         
         currentMatchMaxPoints = maxPoints;
-        updatePlayerList();
+        await updatePlayerList();
         updateCurrentMatch(playingTeams);
         $("#new-match-day").hide();
         $("#new-match-day-form").hide();

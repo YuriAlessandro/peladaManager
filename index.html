@@ -46,9 +46,18 @@
     <link rel="manifest" href="https://raw.githubusercontent.com/YuriAlessandro/peladaManager/main/manifest.json">
 </head>
 <body>
-    <div id="new-match-day-button" class="is-mobile" style="display: flex; justify-content: center; align-items: center; height: 90vh;">
-        <button id="new-match-day" class="button is-primary is-large" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i>&ensp;Começar Nova Pelada</button>
-        <button id="show-historic" class="button is-primary is-large"><i class="fa-regular fa-clock"></i></i>&ensp;Histórico</button>
+    <div id="new-match-day-button" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90vh; gap: 24px">
+        <div class="is-flex is-align-items-center is-justify-content-center">
+            <button id="new-match-day" class="button is-primary is-large" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i>&ensp;Começar Nova Pelada</button>
+            <button id="show-historic" class="button is-primary is-large"><i class="fa-regular fa-clock"></i></i>&ensp;Histórico</button>
+        </div>
+        <form class="is-flex is-flex-direction-column" id="join-match-day-form">
+            <label for="join-code-input" class="label">
+                Código da Pelada:
+            </label>
+            <input type="text" id="join-code-input" class="input is-primary is-large" />
+            <button id="join-match-day" class="button is-primary is-large" style="margin-top: 15px;">Entrar em Pelada</button>
+        </form>
     </div>
     <div class="container mobile" style="padding: 15px">
 
@@ -90,7 +99,15 @@
         </div>
 
         <div id="match" style="display: none" class="box">
-            <div>Partida #<span id="match-number">0</span></div>
+            <div class=" is-flex is-justify-content-space-between is-align-items-center mb-4">
+                <div class="">Partida #<span id="match-number">0</span></div>
+                <div class="is-flex is-align-items-center is-gap-2">
+                    <span class="has-text-centered">Código</span>
+                    <button id="copy-join-code" type="button" class="button is-small is-info">
+                        <i class="fa-solid fa-copy mr-2"></i><span id="join-code" class=" is-size-5"></span>
+                    </button>
+                </div>
+            </div>
             <div class="grid">
                 <div class="cell has-text-centered">
                     <h1 id="team-1-captain" class="title">TEAM 1 CAPTAIN</h1>

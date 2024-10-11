@@ -1,5 +1,4 @@
 import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
-
 const LOCAL_STORAGE_KEY = "matche_days";
 const LOCAL_STORAGE_ELO_KEY = "players_elo";
 
@@ -11,73 +10,111 @@ let playingTeams = [];
 let matches = 0;
 let currentId = 0;
 let autoSwitchTeamsPoints = 0;
+let joinCode = '';
 
 const localStorage = window.localStorage;
 
-function createNewGameDay(isLive = true) {
-    const newGame = {
-        maxPoints,
-        playersPerTeam,
-        players,
-        playingTeams,
-        matches,
-        isLive,
-        autoSwitchTeamsPoints,
-        playedOn: new Date(),
+async function getActiveGameDay() {
+    try {
+        const response = await fetch('http://localhost:4000/sessions/game-day', {
+            credentials: 'include'
+        });
+        if(!response.ok) {
+            return null;
+        }
+        return await response.json();
+    } catch {
+        return null
     }
-    return fetch('http://localhost:4000/game-days', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newGame)
-    })
-    .then(response => response.json())
-    .then(data => {
-        newGame.id = data.id;
-        currentId = data.id;
-        return newGame;
-    })
 }
 
-function updateGameDay(gameDay, isLive = true) {
-    gameDay.maxPoints = maxPoints;
-    gameDay.playersPerTeam = playersPerTeam;
-    gameDay.players = players;
-    gameDay.playingTeams = playingTeams;
-    gameDay.matches = matches;
-    gameDay.isLive = isLive;
-    gameDay.autoSwitchTeamsPoints = autoSwitchTeamsPoints;
-    gameDay.playedOn = new Date();
-    // Update all games with new curret game day
-    
-    return fetch(`http://localhost:4000/game-days/${currentId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(gameDay)
-    })
+async function createNewGameDay(isLive = true) {
+    try {
+        const newGame = {
+            maxPoints,
+            playersPerTeam,
+            players,
+            playingTeams,
+            matches,
+            isLive,
+            autoSwitchTeamsPoints,
+            playedOn: new Date(),
+        }
+        const response = await fetch('http://localhost:4000/game-days', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(newGame)
+        });
+        const data = await response.json();
+        newGame.id = data.id;
+        currentId = data.id;
+        joinCode = data.joinCode;
+        return newGame;
+    } catch {
+        return null
+    }
+}
+
+async function joinGameDay(joinCode) {
+    try {
+        const response = await fetch(`http://localhost:4000/game-days/join/${joinCode}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+        });
+        if(!response.ok) {
+            return false;
+        }
+        return await response.json();
+    } catch {
+        return false
+    }
+}
+
+async function updateGameDay(isLive = true) {
+    try {
+        const response = await fetch(`http://localhost:4000/game-days/${currentId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                maxPoints,
+                playersPerTeam,
+                players,
+                matches,
+                isLive,
+                autoSwitchTeamsPoints,
+                playedOn: new Date()
+            })
+        })
+
+        return response.ok;
+    } catch {
+        return false
+    }
 }
 
 
 
 async function upsertGameDay(isLive = true) {
-    const allGames = await getGameDays();
-    
     if(!currentId) {
         return createNewGameDay(isLive)
     }
     
-    // Update current game day
-    const currentGameDay = allGames.find(gameDay => gameDay.id === currentId);
-    if (currentGameDay) {
-        return updateGameDay(currentGameDay, isLive)
-    } 
+    return updateGameDay(isLive)
 }
 
 async function getGameDays() {
-    const response = await fetch('http://localhost:4000/game-days');
+    const response = await fetch('http://localhost:4000/game-days', {
+        credentials: 'include'
+    });
     return await response.json();
 }
 
@@ -85,7 +122,9 @@ async function getRatingsFromStorage(players) {
     const names = players.map(player => player.name).join(',');
     const params = new URLSearchParams();
     params.append('name', names);
-    const response = await fetch(`http://localhost:4000/players?${params.toString()}`);
+    const response = await fetch(`http://localhost:4000/players?${params.toString()}`, {
+        credentials: 'include'
+    });
     const ratings = await response.json();
     return players.map(player_1 => {
         const rating = ratings.find(rating_1 => rating_1.name === player_1.name);
@@ -109,6 +148,7 @@ function storeUpdatedRatings([updatedVictory, updatedLosing]) {
         headers: {
             'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(players)
     })
 }
@@ -128,6 +168,35 @@ function sortPlayers(a, b) {
 
 $('#dev-mode').change(function() {
     updatePlayerList();
+})
+
+$("#join-code-input").on("input", function search(e) {
+    // all to upper case
+    $("#join-code-input").val(e.target.value.toUpperCase());
+})
+
+$("#join-match-day-form").submit(async function(e) {
+    e.preventDefault();
+    const joinCode = $("#join-code-input").val();
+    const gameDay = await joinGameDay(joinCode);
+    if(!gameDay) {
+        alert("Código inválido");
+        return;
+    }
+    maxPoints = gameDay.maxPoints;
+    playersPerTeam = gameDay.playersPerTeam;
+    players = gameDay.players;
+    playingTeams = gameDay.playingTeams;
+    matches = gameDay.matches;
+    currentId = gameDay.id;
+    updatePlayerList();
+    updateCurrentMatch(playingTeams);
+    $("#new-match-day").hide();
+    $("#new-match-day-form").hide();
+    $("#new-match-day-button").hide();
+    $("#match").show();
+    $("#all-player-list").show();
+    $("#end-match-day").show();
 })
 
 async function updatePlayerList() {
@@ -250,6 +319,7 @@ function addNewPlayer(){
         headers: {
             'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
             name: playerName,
             ...createInitialRating()
@@ -291,7 +361,8 @@ function updateCurrentMatch(teams) {
     teams[1].forEach(player => {
         $("#team-2-players").append(`<li>${player.name}</li>`);
     });
-    
+
+    $("#join-code").text(joinCode);
     $("#match").show();
     
     playingTeams = teams;
@@ -332,6 +403,12 @@ $("#start-match-day").click(async function() {
     updateCurrentMatch(await generateTeams(firstPlayers));
     upsertGameDay();
     randomServe();
+});
+
+$("#copy-join-code").click(function() {
+    const joinCode = $("#join-code").text();
+    navigator.clipboard.writeText(joinCode);
+    alert("Código copiado para a área de transferência.");
 });
 
 $("#update-match-day").click(function() {
@@ -648,7 +725,7 @@ $("#show-historic").click(async function() {
     $("#history-container").show();
     $("#new-match-day-button").hide();
     
-    const gameDays = (await getGameDays()).sort((a, b) => b.id - a.id);
+    const gameDays = await getGameDays()
     $("#historic").empty();
     const date = gameDay.playedOn
     ? new Date(gameDay.playedOn).toLocaleString()
@@ -686,31 +763,29 @@ $("#historic-days").on("click", ".match-historic", async function() {
 
 
 $(document).ready(async function (){
-    const gameDays = await getGameDays();
-    if (gameDays.length > 0) {
-        const lastGameDay = gameDays[gameDays.length - 1];
-        
-        if (lastGameDay.isLive) {
-            maxPoints = lastGameDay.maxPoints;
-            playersPerTeam = lastGameDay.playersPerTeam;
-            players = lastGameDay.players;
-            playingTeams = lastGameDay.playingTeams;
-            matches = lastGameDay.matches;
-            currentId = lastGameDay.id;
-            
-            currentMatchMaxPoints = maxPoints;
-            updatePlayerList();
-            updateCurrentMatch(playingTeams);
-            $("#new-match-day").hide();
-            $("#new-match-day-form").hide();
-            $("#new-match-day-button").hide();
-            $("#match").show();
-            $("#all-player-list").show();
-            $("#end-match-day").show();
-            
-            return;
-        }
+    const activeGame = await getActiveGameDay();
+    if(!activeGame) {
+        currentId = null;
+        return
     }
-    
-    currentId = null;
+
+    if (activeGame.isLive) {
+        maxPoints = activeGame.maxPoints;
+        playersPerTeam = activeGame.playersPerTeam;
+        players = activeGame.players;
+        playingTeams = activeGame.playingTeams;
+        matches = activeGame.matches;
+        currentId = activeGame.id;
+        joinCode = activeGame.joinCode;
+        
+        currentMatchMaxPoints = maxPoints;
+        updatePlayerList();
+        updateCurrentMatch(playingTeams);
+        $("#new-match-day").hide();
+        $("#new-match-day-form").hide();
+        $("#new-match-day-button").hide();
+        $("#match").show();
+        $("#all-player-list").show();
+        $("#end-match-day").show();
+    }
 });

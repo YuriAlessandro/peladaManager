@@ -23,7 +23,7 @@ function createNewGameDay(isLive = true) {
         matches,
         isLive,
         autoSwitchTeamsPoints,
-        playedOn: new Date().toLocaleDateString(),
+        playedOn: new Date(),
     }
     return fetch('http://localhost:4000/game-days', {
         method: 'POST',
@@ -48,7 +48,7 @@ function updateGameDay(gameDay, isLive = true) {
     gameDay.matches = matches;
     gameDay.isLive = isLive;
     gameDay.autoSwitchTeamsPoints = autoSwitchTeamsPoints;
-    gameDay.playedOn = new Date().toLocaleDateString();
+    gameDay.playedOn = new Date();
     // Update all games with new curret game day
     
     return fetch(`http://localhost:4000/game-days/${currentId}`, {
@@ -649,11 +649,14 @@ function showFinalPlayerList(playersToDisplay) {
         
         const gameDays = (await getFromLocalStorage()).sort((a, b) => b.id - a.id);
         $("#historic").empty();
+        const date = gameDay.playedOn
+            ? new Date(gameDay.playedOn).toLocaleString()
+            : new Date("2024-09-07").toLocaleString();
         
         gameDays.forEach(gameDay => {
             $("#historic-days").append(`
             <div class='cell match-historic' id='${gameDay.id}'>
-                <button class='button is-large'>[${gameDay.id}] Jogo de ${gameDay.playedOn || new Date("2024-09-07").toLocaleString()}</button>
+                <button class='button is-large'>[${gameDay.id}] Jogo de ${date}</button>
             </div>`);
             });
         });

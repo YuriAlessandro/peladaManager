@@ -546,170 +546,171 @@ function showFinalPlayerList(playersToDisplay) {
                 <td>${player.victories}</td>
                 <td>${player.defeats}</td>
                 <td>${player.lastPlayedMatch}</td>
-            </tr>`);
-        });
-    }
-    
-    $("#end-match-day").click(function() {
-        const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
-        
-        if (confirm) {
-            saveOnLocalStorage(false);
-            $("#new-match-day").hide();
-            $("#new-match-day-form").hide();
-            $("#match").hide();
-            $(this).hide();
-            const playersByWinPercentage = getPlayersByWinPercentage();
-            showFinalPlayerList(playersByWinPercentage);
-        }
-        
+            </tr>`
+        );
     });
+}
+
+$("#end-match-day").click(function() {
+    const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
     
-    $("#change-match-day").click(function() {
-        $("#player-list").empty();
-        $("#new-match-day-form").show();
-        $("#player-list").show();
+    if (confirm) {
+        saveOnLocalStorage(false);
         $("#new-match-day").hide();
+        $("#new-match-day-form").hide();
         $("#match").hide();
-        $("#all-player-list").hide();
-        $("#start-match-day").hide();
-        $("#update-match-day").show();
-        
-        $("#player-list").append(`<p>${players.length} jogadores cadastrados</p>`);
-        
-        players.forEach(player => {
-            $("#player-list").append(`<li>${player.name}</li>`);
-        });
-        
-        $("#players-per-team").val(playersPerTeam);
-        $("#max-points").val(maxPoints);
-    });
-    
-    $("#end-current-match").click(function() {
-        let team1Score = parseInt($("#score-team-1").text());
-        let team2Score = parseInt($("#score-team-2").text());
-        
-        if (team1Score === team2Score) {
-            alert("Partida empatada, não é possível encerrar. Decida um vencedor.");
-            return;
-        }
-        
-        const winningTeam = team1Score > team2Score ? 0 : 1;
-        const losingTeam = 1 - winningTeam;
-        
-        const confirm = window.confirm("Deseja realmente encerrar a partida?");
-        if (confirm) {
-            startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
-        }
-        
-        saveOnLocalStorage();
-    });
-    
-    function swapTeams() {
-        const temp = playingTeams[0];
-        playingTeams[0] = playingTeams[1];
-        playingTeams[1] = temp;
-        
-        // Revert scores
-        const team1Score = $("#score-team-1").text();
-        const team2Score = $("#score-team-2").text();
-        $("#score-team-1").text(team2Score);
-        $("#score-team-2").text(team1Score);
-        
-        if ($("#score-1").hasClass('is-info')) {
-            $("#score-1").removeClass('is-info').addClass('is-danger');
-            $("#score-2").removeClass('is-danger').addClass('is-info');
-        } else {
-            $("#score-1").removeClass('is-danger').addClass('is-info');
-            $("#score-2").removeClass('is-info').addClass('is-danger');
-        }
-        
-        alert('Times invertidos!');
-        updateCurrentMatch(playingTeams);
-        saveOnLocalStorage();
+        $(this).hide();
+        const playersByWinPercentage = getPlayersByWinPercentage();
+        showFinalPlayerList(playersByWinPercentage);
     }
     
-    $("#swap-current-match").click(function() {
-        swapTeams();
+});
+
+$("#change-match-day").click(function() {
+    $("#player-list").empty();
+    $("#new-match-day-form").show();
+    $("#player-list").show();
+    $("#new-match-day").hide();
+    $("#match").hide();
+    $("#all-player-list").hide();
+    $("#start-match-day").hide();
+    $("#update-match-day").show();
+    
+    $("#player-list").append(`<p>${players.length} jogadores cadastrados</p>`);
+    
+    players.forEach(player => {
+        $("#player-list").append(`<li>${player.name}</li>`);
     });
     
-    $("#auto-switch-teams").click(function() {
-        const checked = $(this).is(":checked");
-        
-        if (checked) {
-            $("#auto-switch-teams-points").removeAttr('disabled');
-        } else {
-            $("#auto-switch-teams-points").attr('disabled','disabled');
-        }
-    });
+    $("#players-per-team").val(playersPerTeam);
+    $("#max-points").val(maxPoints);
+});
+
+$("#end-current-match").click(function() {
+    let team1Score = parseInt($("#score-team-1").text());
+    let team2Score = parseInt($("#score-team-2").text());
     
-    $("#show-historic").click(async function() {
-        $("#history-container").show();
-        $("#new-match-day-button").hide();
-        
-        const gameDays = (await getFromLocalStorage()).sort((a, b) => b.id - a.id);
-        $("#historic").empty();
-        const date = gameDay.playedOn
-            ? new Date(gameDay.playedOn).toLocaleString()
-            : new Date("2024-09-07").toLocaleString();
-        
-        gameDays.forEach(gameDay => {
-            $("#historic-days").append(`
+    if (team1Score === team2Score) {
+        alert("Partida empatada, não é possível encerrar. Decida um vencedor.");
+        return;
+    }
+    
+    const winningTeam = team1Score > team2Score ? 0 : 1;
+    const losingTeam = 1 - winningTeam;
+    
+    const confirm = window.confirm("Deseja realmente encerrar a partida?");
+    if (confirm) {
+        startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
+    }
+    
+    saveOnLocalStorage();
+});
+
+function swapTeams() {
+    const temp = playingTeams[0];
+    playingTeams[0] = playingTeams[1];
+    playingTeams[1] = temp;
+    
+    // Revert scores
+    const team1Score = $("#score-team-1").text();
+    const team2Score = $("#score-team-2").text();
+    $("#score-team-1").text(team2Score);
+    $("#score-team-2").text(team1Score);
+    
+    if ($("#score-1").hasClass('is-info')) {
+        $("#score-1").removeClass('is-info').addClass('is-danger');
+        $("#score-2").removeClass('is-danger').addClass('is-info');
+    } else {
+        $("#score-1").removeClass('is-danger').addClass('is-info');
+        $("#score-2").removeClass('is-info').addClass('is-danger');
+    }
+    
+    alert('Times invertidos!');
+    updateCurrentMatch(playingTeams);
+    saveOnLocalStorage();
+}
+
+$("#swap-current-match").click(function() {
+    swapTeams();
+});
+
+$("#auto-switch-teams").click(function() {
+    const checked = $(this).is(":checked");
+    
+    if (checked) {
+        $("#auto-switch-teams-points").removeAttr('disabled');
+    } else {
+        $("#auto-switch-teams-points").attr('disabled','disabled');
+    }
+});
+
+$("#show-historic").click(async function() {
+    $("#history-container").show();
+    $("#new-match-day-button").hide();
+    
+    const gameDays = (await getFromLocalStorage()).sort((a, b) => b.id - a.id);
+    $("#historic").empty();
+    const date = gameDay.playedOn
+    ? new Date(gameDay.playedOn).toLocaleString()
+    : new Date("2024-09-07").toLocaleString();
+    
+    gameDays.forEach(gameDay => {
+        $("#historic-days").append(`
             <div class='cell match-historic' id='${gameDay.id}'>
                 <button class='button is-large'>[${gameDay.id}] Jogo de ${date}</button>
-            </div>`);
-            });
-        });
+            </div>`
+        );
+    });
+});
+
+$("#historic-days").on("click", ".match-historic", async function() {
+    const gameId = $(this).attr("id");
+    const gameDays = await getFromLocalStorage();
+    const gameDay = gameDays.find(gameDay => gameDay.id == gameId);
+    
+    maxPoints = gameDay.maxPoints;
+    playersPerTeam = gameDay.playersPerTeam;
+    players = gameDay.players;
+    playingTeams = gameDay.playingTeams;
+    matches = gameDay.matches;
+    currentId = gameDay.id;
+    
+    updatePlayerList();
+    
+    const playersByWinPercentage = getPlayersByWinPercentage();
+    
+    $("#history-container").hide();
+    $("#all-player-list").show();
+    showFinalPlayerList(playersByWinPercentage);
+});
+
+
+$(document).ready(async function (){
+    const gameDays = await getFromLocalStorage();
+    if (gameDays.length > 0) {
+        const lastGameDay = gameDays[gameDays.length - 1];
         
-        $("#historic-days").on("click", ".match-historic", async function() {
-            const gameId = $(this).attr("id");
-            const gameDays = await getFromLocalStorage();
-            const gameDay = gameDays.find(gameDay => gameDay.id == gameId);
+        if (lastGameDay.isLive) {
+            maxPoints = lastGameDay.maxPoints;
+            playersPerTeam = lastGameDay.playersPerTeam;
+            players = lastGameDay.players;
+            playingTeams = lastGameDay.playingTeams;
+            matches = lastGameDay.matches;
+            currentId = lastGameDay.id;
             
-            maxPoints = gameDay.maxPoints;
-            playersPerTeam = gameDay.playersPerTeam;
-            players = gameDay.players;
-            playingTeams = gameDay.playingTeams;
-            matches = gameDay.matches;
-            currentId = gameDay.id;
-            
+            currentMatchMaxPoints = maxPoints;
             updatePlayerList();
-            
-            const playersByWinPercentage = getPlayersByWinPercentage();
-            
-            $("#history-container").hide();
+            updateCurrentMatch(playingTeams);
+            $("#new-match-day").hide();
+            $("#new-match-day-form").hide();
+            $("#new-match-day-button").hide();
+            $("#match").show();
             $("#all-player-list").show();
-            showFinalPlayerList(playersByWinPercentage);
-        });
-        
-        
-        $(document).ready(async function (){
-            const gameDays = await getFromLocalStorage();
-            if (gameDays.length > 0) {
-                const lastGameDay = gameDays[gameDays.length - 1];
-                
-                if (lastGameDay.isLive) {
-                    maxPoints = lastGameDay.maxPoints;
-                    playersPerTeam = lastGameDay.playersPerTeam;
-                    players = lastGameDay.players;
-                    playingTeams = lastGameDay.playingTeams;
-                    matches = lastGameDay.matches;
-                    currentId = lastGameDay.id;
-                    
-                    currentMatchMaxPoints = maxPoints;
-                    updatePlayerList();
-                    updateCurrentMatch(playingTeams);
-                    $("#new-match-day").hide();
-                    $("#new-match-day-form").hide();
-                    $("#new-match-day-button").hide();
-                    $("#match").show();
-                    $("#all-player-list").show();
-                    $("#end-match-day").show();
-                    
-                    return;
-                }
-            }
+            $("#end-match-day").show();
             
-            currentId = null;
-        });
-        
+            return;
+        }
+    }
+    
+    currentId = null;
+});

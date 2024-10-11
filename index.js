@@ -14,6 +14,7 @@ let currentId = 0;
 let autoSwitchTeamsPoints = 0;
 let joinCode = '';
 let courtId = null
+const localStorage = window.localStorage;
 
 socket.on('game-day:updated',  async () => {
     const activeGame = await getActiveGameDay();
@@ -837,13 +838,44 @@ $("#historic-days").on("click", ".match-historic", async function() {
 });
 
 
+async function migrateToDatabase(players, gameDays) {
+    try {
+        const response = await fetch('http://localhost:4000/migrations/to-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({players, gameDays})
+        });
+        return response.ok;
+    } catch {
+        return false
+    }
+}
+
 $(document).ready(async function (){
+    const hasMigratedToDatabase = localStorage.getItem("migrated_to_database");
+    const localStoragePlayers = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
+    const localStorageGameDays = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+
+    if(!hasMigratedToDatabase && (localStorageGameDays || localStoragePlayers)) {
+        console.log('localStoragePlayers', localStoragePlayers)
+        console.log('KEY', LOCAL_STORAGE_KEY)
+        console.log(localStorage.getItem(LOCAL_STORAGE_KEY))
+        console.log('localStorageGameDays', localStorageGameDays)
+        const ok = await migrateToDatabase(localStoragePlayers, localStorageGameDays);
+        console.log('migrateToDatabase', ok)
+        if(ok) {
+            localStorage.setItem("migrated_to_database", true);
+        }
+    }
+
     const activeGame = await getActiveGameDay();
     if(!activeGame) {
         currentId = null;
         return
     }
-    console.log('active', activeGame)
 
     if (activeGame.isLive) {
         maxPoints = activeGame.maxPoints;

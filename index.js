@@ -434,7 +434,6 @@ async function updateCurrentMatch(teams) {
     $("#new-match-day-form").hide();
     
     $("#match-number").text(matches + 1);
-    
     $("#team-1-captain").text(`Time ${teams[0][0].name}`);
     teams[0].forEach(player => {
         $("#team-1-players").append(`<li>${player.name}</li>`);
@@ -631,7 +630,7 @@ async function startNewMatch(winningPlayers, losingPlayers) {
     const availablePlayers = findAvailablePlayers(winningPlayers);
 
     const nextMatchPlayers = availablePlayers.length === playersPerTeam * 2
-        ? await generateTeams(availablePlayers)
+        ? availablePlayers
         : findNextMatchPlayers(winningPlayers, losingPlayers);
 
     currentMatchMaxPoints = maxPoints;
@@ -935,8 +934,7 @@ $(document).ready(async function (){
         }
         
         currentMatchMaxPoints = maxPoints;
-        await updatePlayerList();
-        updateCurrentMatch(playingTeams);
+        await updateCurrentMatch(playingTeams);
         $("#new-match-day").hide();
         $("#new-match-day-form").hide();
         $("#new-match-day-button").hide();

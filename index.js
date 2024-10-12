@@ -2,7 +2,6 @@ import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
 import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
 const LOCAL_STORAGE_ELO_KEY = "players_elo";
 const LOCAL_STORAGE_KEY = "matche_days";
-// const API_URL = 'http://localhost:4000'
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://plankton-app-xoik3.ondigitalocean.app'
 
 const socket = io(API_URL);

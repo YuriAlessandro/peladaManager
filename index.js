@@ -2,7 +2,8 @@ import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
 import { createInitialRating, findBestTeamMatch, updateRatings } from './elo.js';
 const LOCAL_STORAGE_ELO_KEY = "players_elo";
 const LOCAL_STORAGE_KEY = "matche_days";
-const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://volei-api.herokuapp.com'
+// const API_URL = 'http://localhost:4000'
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://plankton-app-xoik3.ondigitalocean.app'
 
 const socket = io(API_URL);
 let maxPoints;
@@ -48,6 +49,9 @@ socket.on('game-day:updated',  async () => {
     $("#match").show();
     $("#all-player-list").show();
     $("#end-match-day").show();
+    if(courtId){
+        $('#end-court').show()
+    }
 })
 
 async function getActiveGameDay() {
@@ -94,9 +98,30 @@ async function createNewGameDay(isLive = true) {
     }
 }
 
+// put /sessions/game-day/leave
+async function endCourt() {
+    try {
+        const response = await fetch(`${API_URL}/sessions/game-day/leave`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+        });
+        if(!response.ok) {
+            return false;
+        }
+        socket.emit("game-day:updated", currentId);
+
+        return await response.json();
+    } catch {
+        return false
+    }
+}
+
 async function joinGameDay(joinCode) {
     try {
-        const response = await fetch(`http://localhost:4000/game-days/join/${joinCode}`, {
+        const response = await fetch(`${API_URL}/game-days/join/${joinCode}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -114,7 +139,7 @@ async function joinGameDay(joinCode) {
 
 async function updateGameDay(isLive = true) {
     try {
-        const response = await fetch(`http://localhost:4000/sessions/game-day`, {
+        const response = await fetch(`${API_URL}/sessions/game-day`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -163,7 +188,7 @@ async function getRatingsFromStorage(players) {
     const names = players.map(player => player.name).join(',');
     const params = new URLSearchParams();
     params.append('name', names);
-    const response = await fetch(`http://localhost:4000/players?${params.toString()}`, {
+    const response = await fetch(`${API_URL}/players?${params.toString()}`, {
         credentials: 'include'
     });
     const ratings = await response.json();
@@ -430,6 +455,9 @@ async function updateCurrentMatch(teams) {
 
 $("#start-match-day").click(async function() {
     $("#end-match-day").show();
+    if(courtId){
+        $('#end-court').show()
+    }
     
     const automaticallySwitchTeams = $("#auto-switch-teams").is(":checked");
     if (automaticallySwitchTeams) {
@@ -713,6 +741,7 @@ function renderEndGameDay() {
     $("#new-match-day-form").hide();
     $("#match").hide();
     $("#end-match-day").hide();
+    $("#end-court").hide();
     const playersByWinPercentage = getPlayersByWinPercentage();
     showFinalPlayerList(playersByWinPercentage);
 }
@@ -726,6 +755,14 @@ $("#end-match-day").click(async function() {
     }
     
 });
+
+$("#end-court").click(async function() {
+    const confirm = window.confirm("Deseja realmente encerrar essa quadra?");
+    if (confirm) {
+        await endCourt();
+        window.location.reload();
+    }
+})  
 
 $("#change-match-day").click(function() {
     $("#player-list").empty();
@@ -906,6 +943,9 @@ $(document).ready(async function (){
         $("#match").show();
         $("#all-player-list").show();
         $("#end-match-day").show();
+        if(courtId){
+            $('#end-court').show()
+        }
         socket.emit('join', currentId);
     }
 });

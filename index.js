@@ -900,10 +900,6 @@ $(document).ready(async function (){
     const localStorageGameDays = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
 
     if(!hasMigratedToDatabase && (localStorageGameDays || localStoragePlayers)) {
-        console.log('localStoragePlayers', localStoragePlayers)
-        console.log('KEY', LOCAL_STORAGE_KEY)
-        console.log(localStorage.getItem(LOCAL_STORAGE_KEY))
-        console.log('localStorageGameDays', localStorageGameDays)
         const ok = await migrateToDatabase(localStoragePlayers, localStorageGameDays);
         console.log('migrateToDatabase', ok)
         if(ok) {

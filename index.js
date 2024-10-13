@@ -521,8 +521,9 @@ $("#start-match-day").click(async function() {
             alert("Não há jogadores suficientes para começar a partida.");
             return;
         }
+        playingTeams = await generateTeams(firstPlayers);
         await upsertGameDay();
-        updateCurrentMatch(await generateTeams(firstPlayers));
+        updateCurrentMatch(playingTeams);
         randomServe();
         $("#end-match-day").show();
         if(courtId) $('#end-court').show()
@@ -603,57 +604,37 @@ function findAvailablePlayers(winners) {
     .filter(player => !findPlayerByName(otherPlayingTeams.flat(), player.name))
 }
 
-function findNextMatchPlayers(winners, losers) {
-    const notPlayingPlayers = players
-    .filter(player => !player.playing);
-    let newPlayers = [...winners];
-    let playersToPlay = [];
-    let playerList = players
-    .sort((a, b) => sortPlayers(a, b))
-    .filter(player => !findPlayerByName(winners, player.name)
-    && !findPlayerByName(losers, player.name)
-    && !findPlayerByName(notPlayingPlayers, player.name)
-    && !findPlayerByName(otherPlayingTeams.flat(), player.name));
-    
-    // Is there any players that didn't play yet?
-    // I have substitutes to play
-    playersToPlay = playerList.slice(0, playersPerTeam);
-    
-    if (playersToPlay.length <= playersPerTeam) {
-        newPlayers = newPlayers.concat(playersToPlay);
-    } else if (playersToPlay.length > playersPerTeam) {
-        // Select random players to play
-        for (let i = 0; i < playersPerTeam; i++) {
-            const playerIndex = Math.floor(Math.random() * playersToPlay.length);
-            const player = playersToPlay[playerIndex];
-            if (!findPlayerByName(newPlayers, player.name)) {
-                newPlayers.push(player);
-            }
-        }
+function findNextMatchPlayers(winners) {
+    if(winners.length > playersPerTeam * 2) {
+        return winners
+            .sort((a, b) => sortPlayers(a, b))
+            .slice(0, playersPerTeam * 2);
+    }
+
+    if(winners.length === playersPerTeam * 2) {
+        return winners;
     }
     
-    // Remove players that are already playing, get players with less matches but that played the longest time ago
-    const sortedPlayers = findAvailablePlayers(winners)
-    .slice(0, (playersPerTeam * 2) - newPlayers.length);
+    let nextPlayers = [
+        ...winners,
+    ];
+
     
-    while (newPlayers.length < playersPerTeam * 2) {
-        // Just to be sure, remove any duplicates
-        newPlayers = newPlayers.filter((player, index, self) => self.findIndex(p => p.name === player.name) === index);
-        
-        const playerIndex = Math.floor(Math.random() * sortedPlayers.length);
-        if(playerIndex < 0) continue;
-        const player = sortedPlayers[playerIndex];
-        
-        if (!findPlayerByName(newPlayers, player.name)) {
-            newPlayers.push(player);
-        }
+    const availablePlayersToJoin = findAvailablePlayers(winners)
+        .slice()
+        .sort((a, b) => sortPlayers(a, b))
+    
+    while (nextPlayers.length < playersPerTeam * 2 && availablePlayersToJoin.length > 0) {
+        const player = availablePlayersToJoin.shift();
+        nextPlayers.push(player);
+        nextPlayers = nextPlayers.filter((player, index, self) => self.findIndex(p => p.name === player.name) === index);
     }
-    
-    return newPlayers;
+
+    return nextPlayers;
 }
 
 
-async function startNewMatch(winningPlayers, losingPlayers) {
+async function startNewMatch(winningPlayers) {
     $("#match").show();
     $("#score-team-1").text("00");
     $("#score-team-2").text("00");
@@ -663,12 +644,7 @@ async function startNewMatch(winningPlayers, losingPlayers) {
         return;
     }
     
-    const availablePlayers = findAvailablePlayers(winningPlayers);
-    
-    const nextMatchPlayers = availablePlayers.length === playersPerTeam * 2
-    ? availablePlayers
-    : findNextMatchPlayers(winningPlayers, losingPlayers);
-    
+    const nextMatchPlayers = findNextMatchPlayers(winningPlayers);
     currentMatchMaxPoints = maxPoints;
     randomServe();
     updateCurrentMatch(await generateTeams(nextMatchPlayers));
@@ -715,10 +691,10 @@ $(".score-point").click(async function() {
     
     if (team1Score >= currentMatchMaxPoints && diff >= 2) {
         await endMatch(0);
-        await startNewMatch(playingTeams[0], playingTeams[1]);
+        await startNewMatch(playingTeams[0]);
     } else if (team2Score >= currentMatchMaxPoints && diff >= 2) {
         await endMatch(1);
-        await startNewMatch(playingTeams[1], playingTeams[0]);
+        await startNewMatch(playingTeams[1]);
     }
     
     if (autoSwitchTeamsPoints > 0) {

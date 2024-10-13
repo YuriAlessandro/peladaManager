@@ -67,7 +67,11 @@ socket.on('game-day:updated',  async () => {
     courtId = activeGame.courtId || null
     
     if(playingTeams.length === 0) {
-        playingTeams = await generateTeams(players);
+        const playersToTeam = findNextMatchPlayers()
+        if(playersToTeam.length > 0) {
+            playingTeams = await generateTeams(playersToTeam);
+            await upsertGameDay();   
+        }
     }
     
     currentMatchMaxPoints = maxPoints;
@@ -523,7 +527,7 @@ $("#start-match-day").click(async function() {
         }
         playingTeams = await generateTeams(firstPlayers);
         await upsertGameDay();
-        updateCurrentMatch(playingTeams);
+        await updateCurrentMatch(playingTeams);
         randomServe();
         $("#end-match-day").show();
         if(courtId) $('#end-court').show()
@@ -604,7 +608,7 @@ function findAvailablePlayers(winners) {
     .filter(player => !findPlayerByName(otherPlayingTeams.flat(), player.name))
 }
 
-function findNextMatchPlayers(winners) {
+function findNextMatchPlayers(winners = []) {
     if(winners.length > playersPerTeam * 2) {
         return winners
             .sort((a, b) => sortPlayers(a, b))
@@ -647,7 +651,7 @@ async function startNewMatch(winningPlayers) {
     const nextMatchPlayers = findNextMatchPlayers(winningPlayers);
     currentMatchMaxPoints = maxPoints;
     randomServe();
-    updateCurrentMatch(await generateTeams(nextMatchPlayers));
+    await updateCurrentMatch(await generateTeams(nextMatchPlayers));
     await upsertGameDay();
 }
 
@@ -813,7 +817,7 @@ $("#change-match-day").click(function() {
     $("#max-points").val(maxPoints);
 });
 
-$("#end-current-match").click(function() {
+$("#end-current-match").click(async function() {
     let team1Score = parseInt($("#score-team-1").text());
     let team2Score = parseInt($("#score-team-2").text());
     
@@ -827,13 +831,11 @@ $("#end-current-match").click(function() {
     
     const confirm = window.confirm("Deseja realmente encerrar a partida?");
     if (confirm) {
-        startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
+        await startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
     }
-    
-    upsertGameDay();
 });
 
-function swapTeams() {
+async function swapTeams() {
     const temp = playingTeams[0];
     playingTeams[0] = playingTeams[1];
     playingTeams[1] = temp;
@@ -853,8 +855,8 @@ function swapTeams() {
     }
     
     alert('Times invertidos!');
-    updateCurrentMatch(playingTeams);
-    upsertGameDay();
+    await updateCurrentMatch(playingTeams);
+    await upsertGameDay();
 }
 
 $("#swap-current-match").click(function() {
@@ -956,7 +958,11 @@ $(document).ready(async function (){
         courtId = activeGame.courtId || null
         
         if(playingTeams.length === 0) {
-            playingTeams = await generateTeams(players);
+            const playersToTeam = findNextMatchPlayers()
+            if(playersToTeam.length > 0) {
+                playingTeams = await generateTeams(playersToTeam);
+                await upsertGameDay();
+            }
         }
         
         currentMatchMaxPoints = maxPoints;

@@ -548,6 +548,12 @@ $("#copy-join-code").click(function() {
 });
 
 $("#update-match-day").click(async function() {
+    const availablePlayers = findAvailablePlayers();
+
+    if ($("#players-per-team").val() * 2 > availablePlayers.length) {
+        alert("Sem jogadores suficientes para atualizar a partida.");
+        return;
+    }
     maxPoints = parseInt($("#max-points").val());
     currentMatchMaxPoints = maxPoints;
     playersPerTeam = $("#players-per-team").val();
@@ -555,10 +561,6 @@ $("#update-match-day").click(async function() {
     if ($("#auto-switch-teams").is(":checked")) autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
     else autoSwitchTeamsPoints = 0;
     
-    if (playersPerTeam * 2 > players.length) {
-        alert("Sem jogadores suficientes para atualizar a partida.");
-        return;
-    }
     
     $("#all-player-list").show();
     $("#match").show();
@@ -607,7 +609,7 @@ function findPlayerByName(players, name) {
     return players.find(player => player.name === name);
 }
 
-function findAvailablePlayers(winners) {
+function findAvailablePlayers(winners = []) {
     return players
     .filter(player => player.playing)
     .filter(player => !findPlayerByName(winners, player.name))

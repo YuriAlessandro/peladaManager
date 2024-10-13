@@ -28,7 +28,7 @@ const createSpinner = (id) => {
     return wrapper;
 }
 
-const createPlayer = async (name) => {
+const findOrCreatePlayer = async (name, rating) => {
     try {
         const response = await fetch(`${API_URL}/players`, {
             method: 'PUT',
@@ -38,7 +38,7 @@ const createPlayer = async (name) => {
             credentials: 'include',
             body: JSON.stringify({
                 name,
-                ...createInitialRating()
+                rating,
             })
         })
         
@@ -235,7 +235,7 @@ async function getRatingsFromStorage(players) {
 }
 
 function storeUpdatedRatings([updatedVictory, updatedLosing]) {
-    const players = [...updatedVictory, ...updatedLosing]
+    const all = [...updatedVictory, ...updatedLosing]
     .map(player => ({
         name: player.name,
         mu: player.mu,
@@ -248,7 +248,7 @@ function storeUpdatedRatings([updatedVictory, updatedLosing]) {
             'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify(players)
+        body: JSON.stringify(all)
     })
 }
 
@@ -301,10 +301,9 @@ $("#join-match-day-form").submit(async function(e) {
     })
 })
 
-async function updatePlayerList() {
+function updatePlayerList() {
     $("#players").empty();
-    const playersToList = (await getRatingsFromStorage(players))
-    .sort((a, b) => sortPlayers(a, b))
+    const playersToList = players.slice().sort((a, b) => sortPlayers(a, b))
     const devMode = $("#dev-mode").is(":checked");
     if(devMode) {
         $("#elo-header").show();
@@ -392,8 +391,8 @@ $("#all-player-list").on("click", ".remove-player", async function() {
     const playerIndex = players.findIndex(player => player.name === playerName);
     players[playerIndex].playing = !players[playerIndex].playing;
     
-    await updatePlayerList();
     await upsertGameDay();
+    updatePlayerList();
 });
 
 $("#new-match-day").click(function() {
@@ -416,6 +415,7 @@ async function addNewPlayer(){
             return;
         }
         const playerOrder = players.length + 1;
+        const rating = createInitialRating();
         const newPlayer = {
             name: playerName,
             matches: 0,
@@ -424,12 +424,13 @@ async function addNewPlayer(){
             lastPlayedMatch: 0,
             playing: true,
             order: playerOrder,
+            ...rating
         }
         const spinner = createSpinner('add-new-player-spinner');
         $("#add-new-player-wrapper").append(spinner);
         $("#add-new-player").attr('disabled', 'disabled');
         
-        const ok = await createPlayer(playerName);
+        const ok = await findOrCreatePlayer(playerName, rating);
         if(!ok) {
             alert('Erro ao criar jogador')
             return
@@ -439,7 +440,7 @@ async function addNewPlayer(){
         
         $("#player-list").append(`<li>${playerName}</li>`);
         $("#new-player-name").val("");
-        await updatePlayerList();
+        updatePlayerList();
     } finally {
         $("#add-new-player").removeAttr('disabled');
         $('#add-new-player-spinner').remove();
@@ -484,7 +485,7 @@ async function updateCurrentMatch(teams) {
     $("#match").show();
     
     playingTeams = teams;
-    await updatePlayerList();
+    updatePlayerList();
 }
 
 $("#start-match-day").click(async function() {
@@ -563,34 +564,39 @@ $("#update-match-day").click(async function() {
     $("#match").show();
     $("#new-match-day-form").hide();
     $("#player-list").hide();
-    await updatePlayerList();
     await upsertGameDay();
+    updatePlayerList();
 });
 
 async function endMatch(victoryTeam) {
     alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
     matches += 1;
+
+    const winners = playingTeams[victoryTeam];
+    const losers = playingTeams[1 - victoryTeam];
     
-    const victoryTeamRating =  await getRatingsFromStorage(playingTeams[victoryTeam])
-    const losingTeamRating = await getRatingsFromStorage(playingTeams[1 - victoryTeam])
-    
-    const updatedRatings = updateRatings(victoryTeamRating, losingTeamRating);
-    storeUpdatedRatings(updatedRatings);
+    const updatedRatings = updateRatings(winners, losers);
+    await storeUpdatedRatings(updatedRatings);
+    const [updatedWinners, updatedLosers] = updatedRatings;
     
     // Add one match to every player and one victory to each player on winning team
-    playingTeams[victoryTeam].forEach(player => {
+    updatedWinners.forEach(player => {
         const playerIndex = players.findIndex(p => p.name === player.name);
         players[playerIndex].lastPlayedMatch = matches;
         players[playerIndex].matches += 1;
         players[playerIndex].victories += 1;
+        players[playerIndex].mu = player.mu;
+        players[playerIndex].sigma = player.sigma;
     });
     
     // Add one match to every player on losing team
-    playingTeams[1 - victoryTeam].forEach(player => {
+    updatedLosers.forEach(player => {
         const playerIndex = players.findIndex(p => p.name === player.name);
         players[playerIndex].lastPlayedMatch = matches;
         players[playerIndex].matches += 1;
         players[playerIndex].defeats += 1;
+        players[playerIndex].mu = player.mu;
+        players[playerIndex].sigma = player.sigma;
     });
     
     
@@ -901,7 +907,7 @@ $("#historic-days").on("click", ".match-historic", async function() {
     matches = gameDay.matches;
     currentId = gameDay.id;
     
-    await updatePlayerList();
+    updatePlayerList();
     
     const playersByWinPercentage = getPlayersByWinPercentage();
     

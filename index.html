@@ -88,14 +88,16 @@
                 <div class="column">
                     <input type="text" placeholder="Nome do jogador" id="new-player-name" class="input is-primary is-large" />
                 </div>
-                <div class="column">
+                <div class="column is-flex is-align-items-center" id="add-new-player-wrapper" style="gap: 8px">
                     <button id="add-new-player" class="button is-secondary is-large">Adicionar novo jogador</button>
                 </div>
             </div>
             
             <ul id="player-list" class="content"></ul>
-            <button id="start-match-day" class="button is-primary is-large">Iniciar Pelada</button>
-            <button id="update-match-day" class="button is-primary is-large" style="display: none; margin-bottom: 15px;">Atualizar Pelada</button>
+            <div class="is-flex is-align-items-center" style="gap: 8px">
+                <button id="start-match-day" class="button is-primary is-large">Iniciar Pelada</button>
+                <button id="update-match-day" class="button is-primary is-large" style="display: none; margin-bottom: 15px;">Atualizar Pelada</button>
+            </div>
         </div>
 
         <div id="match" style="display: none" class="box">

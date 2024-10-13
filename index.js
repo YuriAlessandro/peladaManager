@@ -19,6 +19,36 @@ let joinCode = '';
 let courtId = null
 const localStorage = window.localStorage;
 
+const createSpinner = (id) => {
+    const wrapper = document.createElement('span');
+    wrapper.id = id ?? 'spinner';
+    wrapper.classList.add('icon');
+    const i = document.createElement('i');
+    i.classList.add('fa-pulse',  'fa-solid', 'fa-spinner', 'fa-lg');
+    wrapper.appendChild(i);
+    return wrapper;
+}
+
+const createPlayer = async (name) => {
+    try {
+        const response = await fetch(`${API_URL}/players`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                name,
+                ...createInitialRating()
+            })
+        })
+        
+        return response.ok
+    } catch {
+        return false
+    }
+}
+
 socket.on('game-day:updated',  async () => {
     const activeGame = await getActiveGameDay();
     if(!activeGame) {
@@ -26,7 +56,7 @@ socket.on('game-day:updated',  async () => {
         renderEndGameDay();
         return
     }
-
+    
     maxPoints = activeGame.maxPoints;
     playersPerTeam = activeGame.playersPerTeam;
     players = activeGame.players;
@@ -36,7 +66,7 @@ socket.on('game-day:updated',  async () => {
     currentId = activeGame.id;
     joinCode = activeGame.joinCode;
     courtId = activeGame.courtId || null
-
+    
     if(playingTeams.length === 0) {
         playingTeams = await generateTeams(players);
     }
@@ -112,7 +142,7 @@ async function endCourt() {
             return false;
         }
         socket.emit("game-day:updated", currentId);
-
+        
         return await response.json();
     } catch {
         return false
@@ -156,11 +186,11 @@ async function updateGameDay(isLive = true) {
                 playedOn: new Date()
             })
         })
-
+        
         if(response.ok){
             socket.emit("game-day:updated", currentId);
         }
-
+        
         return response.ok;
     } catch {
         return false
@@ -286,10 +316,10 @@ async function updatePlayerList() {
         const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
         const elo = devMode ? `${formatter.format(player.mu)}/${formatter.format(player.sigma)}` : '';
         const playingClass = isPlayingSomewhereElse
-            ? ''
-            : player.playing
-                ? 'remove-player is-clickable'
-                : 'is-danger remove-player is-clickable';
+        ? ''
+        : player.playing
+        ? 'remove-player is-clickable'
+        : 'is-danger remove-player is-clickable';
         return `
         <tr class="${rowClass}">
             <th>${player.name}</th>
@@ -300,16 +330,16 @@ async function updatePlayerList() {
             ${devMode ? `<td>${elo}</td>` : ''}
             <td class="${playingClass}">
                 ${player.playing 
-                    ? 'Sim ' 
-                    : 'Não'
-                } ${isPlayingSomewhereElse || !isPlayingHere 
-                    ? '<i class="fa-solid fa-volleyball"></i>' 
-                    : '<i class="fa-solid fa-repeat"></i>' 
-                }</td>
+        ? 'Sim ' 
+        : 'Não'
+    } ${isPlayingSomewhereElse || !isPlayingHere 
+        ? '<i class="fa-solid fa-volleyball"></i>' 
+        : '<i class="fa-solid fa-repeat"></i>' 
+    }</td>
         </tr>`
-    }).join('');
-    
-    $("#players").html(rows)
+}).join('');
+
+$("#players").html(rows)
 }
 
 $("#all-player-list").on("click", ".remove-player", async function() {
@@ -368,47 +398,49 @@ $("#new-match-day").click(function() {
     $("#new-match-day-button").hide();
 });
 
-function addNewPlayer(){
-    const playerName = $("#new-player-name").val();
-    
-    if (!playerName) {
-        alert("Insira um nome para o jogador.");
-        return;
-    }
-    
-    const playerExists = players.some(player => player.name === playerName);
-    if (playerExists) {
-        alert("Jogador já cadastrado. Escolha outro nome.");
-        return;
-    }
-    const playerOrder = players.length + 1;
-    const newPlayer = {
-        name: playerName,
-        matches: 0,
-        victories: 0,
-        defeats: 0,
-        lastPlayedMatch: 0,
-        playing: true,
-        order: playerOrder,
-    }
-    
-    players.push(newPlayer);
-    
-    $("#player-list").append(`<li>${playerName}</li>`);
-    
-    $("#new-player-name").val("");
-    updatePlayerList();
-    return fetch(`${API_URL}/players`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+async function addNewPlayer(){
+    try {
+        const playerName = $("#new-player-name").val();
+        
+        if (!playerName) {
+            alert("Insira um nome para o jogador.");
+            return;
+        }
+        
+        const playerExists = players.some(player => player.name === playerName);
+        if (playerExists) {
+            alert("Jogador já cadastrado. Escolha outro nome.");
+            return;
+        }
+        const playerOrder = players.length + 1;
+        const newPlayer = {
             name: playerName,
-            ...createInitialRating()
-        })
-    })
+            matches: 0,
+            victories: 0,
+            defeats: 0,
+            lastPlayedMatch: 0,
+            playing: true,
+            order: playerOrder,
+        }
+        const spinner = createSpinner('add-new-player-spinner');
+        $("#add-new-player-wrapper").append(spinner);
+        $("#add-new-player").attr('disabled', 'disabled');
+        
+        const ok = await createPlayer(playerName);
+        if(!ok) {
+            alert('Erro ao criar jogador')
+            return
+        }
+        
+        players.push(newPlayer);
+        
+        $("#player-list").append(`<li>${playerName}</li>`);
+        $("#new-player-name").val("");
+        await updatePlayerList();
+    } finally {
+        $("#add-new-player").removeAttr('disabled');
+        $('#add-new-player-spinner').remove();
+    }
 }
 
 $("#add-new-player").click(addNewPlayer);
@@ -444,7 +476,7 @@ async function updateCurrentMatch(teams) {
     teams[1].forEach(player => {
         $("#team-2-players").append(`<li>${player.name}</li>`);
     });
-
+    
     $("#join-code").text(joinCode);
     $("#match").show();
     
@@ -453,50 +485,55 @@ async function updateCurrentMatch(teams) {
 }
 
 $("#start-match-day").click(async function() {
-    $("#end-match-day").show();
-    if(courtId){
-        $('#end-court').show()
-    }
-    
-    const automaticallySwitchTeams = $("#auto-switch-teams").is(":checked");
-    if (automaticallySwitchTeams) {
-        autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
+    const  startMatchDaySpinner = createSpinner('start-match-day-spinner');
+    const button = document.getElementById('start-match-day');
+    button.insertAdjacentElement('afterend', startMatchDaySpinner);
+    button.setAttribute('disabled', 'disabled');
+    try {
+        const automaticallySwitchTeams = $("#auto-switch-teams").is(":checked");
+        if (automaticallySwitchTeams) {
+            autoSwitchTeamsPoints = parseInt($("#auto-switch-teams-points").val());
+            
+            if (autoSwitchTeamsPoints <= 0 || autoSwitchTeamsPoints === NaN || !autoSwitchTeamsPoints || autoSwitchTeamsPoints === undefined || autoSwitchTeamsPoints === '') { 
+                alert("Insira um valor maior que 0 para a troca automática de times.");
+                return;
+            }
+            
+            if (autoSwitchTeamsPoints >= maxPoints) {
+                alert("Insira um valor menor que o máximo de pontos.");
+                return;
+            }
+        }
         
-        if (autoSwitchTeamsPoints <= 0 || autoSwitchTeamsPoints === NaN || !autoSwitchTeamsPoints || autoSwitchTeamsPoints === undefined || autoSwitchTeamsPoints === '') { 
-            alert("Insira um valor maior que 0 para a troca automática de times.");
+        maxPoints = parseInt($("#max-points").val());
+        currentMatchMaxPoints = maxPoints;
+        playersPerTeam = $("#players-per-team").val();
+        
+        if (playersPerTeam * 2 > players.length) {
+            alert("Sem jogadores suficientes para começar a partida.");
             return;
         }
         
-        if (autoSwitchTeamsPoints >= maxPoints) {
-            alert("Insira um valor menor que o máximo de pontos.");
+        const playersInOtherTeams = otherPlayingTeams.flat();
+        const firstPlayers = players
+        .filter(p => !findPlayerByName(playersInOtherTeams, p.name))
+        .slice(0, playersPerTeam * 2);
+        if(firstPlayers.length < playersPerTeam * 2) {
+            alert("Não há jogadores suficientes para começar a partida.");
             return;
         }
+        await upsertGameDay();
+        updateCurrentMatch(await generateTeams(firstPlayers));
+        randomServe();
+        $("#end-match-day").show();
+        if(courtId) $('#end-court').show()
+            socket.emit('join', currentId);
+        $("#all-player-list").show();
+    } finally {
+        startMatchDaySpinner.remove();
+        button.removeAttribute('disabled');
     }
     
-    maxPoints = parseInt($("#max-points").val());
-    currentMatchMaxPoints = maxPoints;
-    playersPerTeam = $("#players-per-team").val();
-    
-    if (playersPerTeam * 2 > players.length) {
-        alert("Sem jogadores suficientes para começar a partida.");
-        return;
-    }
-    
-    const playersInOtherTeams = otherPlayingTeams.flat();
-    const firstPlayers = players
-    .filter(p => !findPlayerByName(playersInOtherTeams, p.name))
-    .slice(0, playersPerTeam * 2);
-    if(firstPlayers.length < playersPerTeam * 2) {
-        alert("Não há jogadores suficientes para começar a partida.");
-        return;
-    }
-    await upsertGameDay();
-    updateCurrentMatch(await generateTeams(firstPlayers));
-    await upsertGameDay();
-    randomServe();
-    socket.emit('join', currentId);
-    $("#all-player-list").show();
-
 });
 
 $("#copy-join-code").click(function() {
@@ -598,7 +635,7 @@ function findNextMatchPlayers(winners, losers) {
     
     // Remove players that are already playing, get players with less matches but that played the longest time ago
     const sortedPlayers = findAvailablePlayers(winners)
-        .slice(0, (playersPerTeam * 2) - newPlayers.length);
+    .slice(0, (playersPerTeam * 2) - newPlayers.length);
     
     while (newPlayers.length < playersPerTeam * 2) {
         // Just to be sure, remove any duplicates
@@ -626,13 +663,13 @@ async function startNewMatch(winningPlayers, losingPlayers) {
         alert("Não há jogadores suficientes para começar uma nova partida");
         return;
     }
-
+    
     const availablePlayers = findAvailablePlayers(winningPlayers);
-
+    
     const nextMatchPlayers = availablePlayers.length === playersPerTeam * 2
-        ? availablePlayers
-        : findNextMatchPlayers(winningPlayers, losingPlayers);
-
+    ? availablePlayers
+    : findNextMatchPlayers(winningPlayers, losingPlayers);
+    
     currentMatchMaxPoints = maxPoints;
     randomServe();
     updateCurrentMatch(await generateTeams(nextMatchPlayers));
@@ -749,8 +786,17 @@ $("#end-match-day").click(async function() {
     const confirm = window.confirm("Deseja realmente encerrar o dia de jogos?");
     
     if (confirm) {
-        await upsertGameDay(false);
-        renderEndGameDay();
+        const button = document.getElementById('end-match-day');
+        const spinner = createSpinner('end-match-day-spinner');
+        button.insertAdjacentElement('afterend', spinner);
+        button.setAttribute('disabled', 'disabled');
+        try {
+            await upsertGameDay(false);
+            renderEndGameDay();
+        } finally {
+            spinner.remove();
+            button.removeAttribute('disabled');
+        }
     }
     
 });
@@ -758,8 +804,17 @@ $("#end-match-day").click(async function() {
 $("#end-court").click(async function() {
     const confirm = window.confirm("Deseja realmente encerrar essa quadra?");
     if (confirm) {
-        await endCourt();
-        window.location.reload();
+        const button = document.getElementById('end-court');
+        const spinner = createSpinner('end-court-spinner');
+        button.insertAdjacentElement('afterend', spinner);
+        button.setAttribute('disabled', 'disabled');
+        try {
+            await endCourt();
+            window.location.reload();
+        } finally {
+            spinner.remove();
+            button.removeAttribute('disabled');
+        }
     }
 })  
 
@@ -899,7 +954,7 @@ $(document).ready(async function (){
     const hasMigratedToDatabase = localStorage.getItem("migrated_to_database");
     const localStoragePlayers = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
     const localStorageGameDays = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-
+    
     if(!hasMigratedToDatabase && (localStorageGameDays || localStoragePlayers)) {
         console.log('localStoragePlayers', localStoragePlayers)
         console.log('KEY', LOCAL_STORAGE_KEY)
@@ -911,13 +966,13 @@ $(document).ready(async function (){
             localStorage.setItem("migrated_to_database", true);
         }
     }
-
+    
     const activeGame = await getActiveGameDay();
     if(!activeGame) {
         currentId = null;
         return
     }
-
+    
     if (activeGame.isLive) {
         maxPoints = activeGame.maxPoints;
         playersPerTeam = activeGame.playersPerTeam;
@@ -928,7 +983,7 @@ $(document).ready(async function (){
         currentId = activeGame.id;
         joinCode = activeGame.joinCode;
         courtId = activeGame.courtId || null
-
+        
         if(playingTeams.length === 0) {
             playingTeams = await generateTeams(players);
         }

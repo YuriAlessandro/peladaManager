@@ -15,6 +15,7 @@ let matches = 0;
 let currentId = 0;
 let autoSwitchTeamsPoints = 0;
 let joinCode = '';
+let lastGameDayMatch = 0;
 let courtId = null
 const localStorage = window.localStorage;
 
@@ -62,6 +63,7 @@ socket.on('game-day:updated',  async () => {
     playingTeams = activeGame.playingTeams;
     otherPlayingTeams = activeGame.otherPlayingTeams;
     matches = activeGame.matches;
+    lastGameDayMatch = activeGame.lastMatch;
     currentId = activeGame.id;
     joinCode = activeGame.joinCode;
     courtId = activeGame.courtId || null
@@ -288,6 +290,7 @@ $("#join-match-day-form").submit(async function(e) {
     players = data.players;
     playingTeams = data.playingTeams;
     otherPlayingTeams = data.otherPlayingTeams;
+    lastGameDayMatch = data.lastMatch;
     matches = data.matches;
     joinCode = data.joinCode;
     currentId = data.id;
@@ -573,7 +576,7 @@ $("#update-match-day").click(async function() {
 
 async function endMatch(victoryTeam) {
     alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
-    matches += 1;
+    matches = lastGameDayMatch + 1;
 
     const winners = playingTeams[victoryTeam];
     const losers = playingTeams[1 - victoryTeam];
@@ -963,6 +966,7 @@ $(document).ready(async function (){
         otherPlayingTeams = activeGame.otherPlayingTeams;
         matches = activeGame.matches;
         currentId = activeGame.id;
+        lastGameDayMatch = activeGame.lastMatch;
         joinCode = activeGame.joinCode;
         courtId = activeGame.courtId || null
         

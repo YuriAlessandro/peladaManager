@@ -124,6 +124,7 @@ async function createNewGameDay(isLive = true) {
         const data = await response.json();
         newGame.id = data.id;
         currentId = data.id;
+        courtId = data.courtId;
         joinCode = data.joinCode;
         return newGame;
     } catch {

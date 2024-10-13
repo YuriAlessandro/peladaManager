@@ -910,7 +910,7 @@ $("#historic-days").on("click", ".match-historic", async function() {
     maxPoints = gameDay.maxPoints;
     playersPerTeam = gameDay.playersPerTeam;
     players = gameDay.players;
-    playingTeams = gameDay.playingTeams;
+    playingTeams = gameDay.playingTeams ?? []
     matches = gameDay.matches;
     currentId = gameDay.id;
     

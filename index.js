@@ -577,6 +577,7 @@ $("#update-match-day").click(async function() {
 async function endMatch(victoryTeam) {
     alert(`Time ${playingTeams[victoryTeam][0].name} venceu a partida!`);
     matches = lastGameDayMatch + 1;
+    lastGameDayMatch += 1;
 
     const winners = playingTeams[victoryTeam];
     const losers = playingTeams[1 - victoryTeam];
@@ -895,7 +896,7 @@ $("#show-historic").click(async function() {
     gameDays.forEach(gameDay => {
         $("#historic-days").append(`
             <div class='cell match-historic' id='${gameDay.id}'>
-                <button class='button is-large'>Jogo de ${new Date(gameDay.playedOn).toDateString()}</button>
+                <button class='button is-large'>Jogo de ${new Date(gameDay.playedOn).toLocaleDateString()}</button>
             </div>`
         );
     });

@@ -1,4 +1,4 @@
-const CACHE_NAME = `volley_score_cache_v5`;
+const CACHE_NAME = `volley_score_cache_v6`;
 
 // Use the install event to pre-cache all initial resources.
 self.addEventListener('install', event => {

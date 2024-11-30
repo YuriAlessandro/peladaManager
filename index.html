@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
     <script src="https://kit.fontawesome.com/15fce56598.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         @font-face {
             font-family: Digital7;
@@ -37,6 +38,15 @@
             -webkit-user-select: none;
             -ms-user-select: none;
             user-select: none;
+        }
+
+        .select2-container {
+            font-size: 1.5rem !important;
+        }
+
+        .select2-search {
+            display: flex !important;
+            padding: 11px 17px !important;
         }
     </style>
 
@@ -86,10 +96,20 @@
             </div>
             <div class="columns">
                 <div class="column">
-                    <input type="text" placeholder="Nome do jogador" id="new-player-name" class="input is-primary is-large" />
+                     <label
+                        for="add-new-player-select"
+                    >Selecione os jogadores:</label>
+                    <select 
+                        id="add-new-player-select"
+                        class="select is-primary is-large"
+                        style="width: 100%"
+                        data-placeholder="Selecione os jogadores"
+                        multiple="multiple"
+                    >
+                    </select>
                 </div>
-                <div class="column is-flex is-align-items-center" id="add-new-player-wrapper" style="gap: 8px">
-                    <button id="add-new-player" class="button is-secondary is-large">Adicionar novo jogador</button>
+                <div class="column" style="display: flex; align-items: flex-end;">
+                    <button id="add-new-player" type="button" class="button is-secondary is-large">Confirmar Jogadores</button>
                 </div>
             </div>
             
@@ -190,6 +210,7 @@
       src="https://code.jquery.com/jquery-3.7.1.min.js"
       integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
       crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
     <script type="module" src="./index.js?v=6"></script>
     <script>
     const options = window.location.hostname.includes('localhost') || window.location.hostname.includes('ngrok-free.app')

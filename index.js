@@ -525,6 +525,7 @@ $("#start-match-day").click(async function() {
         const playersInOtherTeams = otherPlayingTeams.flat();
         const firstPlayers = players
         .filter(p => !findPlayerByName(playersInOtherTeams, p.name))
+        .filter(p => p.playing)
         .slice(0, playersPerTeam * 2);
         if(firstPlayers.length < playersPerTeam * 2) {
             alert("Não há jogadores suficientes para começar a partida.");

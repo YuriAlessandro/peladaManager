@@ -49,6 +49,17 @@ const findOrCreatePlayer = async (name, rating) => {
     }
 }
 
+const getPlayers = async () => {
+    try {
+        const response = await fetch(`${API_URL}/players`, {
+            credentials: 'include'
+        });
+        return await response.json();
+    } catch {
+        return []
+    }
+}
+
 socket.on('game-day:updated',  async () => {
     const activeGame = await getActiveGameDay();
     if(!activeGame) {
@@ -76,6 +87,14 @@ socket.on('game-day:updated',  async () => {
         }
     }
     
+    $('#add-new-player-select').empty();
+    getPlayers()
+        .then(p => {
+            const filteredPlayers = p.filter(player => !players.some(p => p.name === player.name));
+            initPlayersSelect(filteredPlayers.sort((a, b) => a.name.localeCompare(b.name)));
+        })
+
+
     currentMatchMaxPoints = maxPoints;
     updateCurrentMatch(playingTeams);
     $("#new-match-day").hide();
@@ -404,46 +423,63 @@ $("#new-match-day").click(function() {
     $("#new-match-day-button").hide();
 });
 
+$('#add-new-player-select').on('select2:select', function (e) {
+    $('.select2-search__field').val('');
+});
+
 async function addNewPlayer(){
     try {
-        const playerName = $("#new-player-name").val();
-        
-        if (!playerName) {
-            alert("Insira um nome para o jogador.");
+         const selectedPlayers = $("#add-new-player-select").select2('data').map(player => player.text);
+
+        if(selectedPlayers.length === 0) {
+            alert("Selecione ao menos um jogador.");
             return;
         }
-        
-        const playerExists = players.some(player => player.name === playerName);
-        if (playerExists) {
-            alert("Jogador já cadastrado. Escolha outro nome.");
+
+        const repeatedPlayers = selectedPlayers.filter(player => players.some(p => p.name === player));
+
+        if(repeatedPlayers.length > 0) {
+            alert(`Os jogadores ${repeatedPlayers.join(', ')} já estão cadastrados.`);
             return;
         }
-        const playerOrder = players.length + 1;
-        const rating = createInitialRating();
-        const newPlayer = {
-            name: playerName,
-            matches: 0,
-            victories: 0,
-            defeats: 0,
-            lastPlayedMatch: 0,
-            playing: true,
-            order: playerOrder,
-            ...rating
-        }
+
         const spinner = createSpinner('add-new-player-spinner');
         $("#add-new-player-wrapper").append(spinner);
         $("#add-new-player").attr('disabled', 'disabled');
-        
-        const ok = await findOrCreatePlayer(playerName, rating);
-        if(!ok) {
-            alert('Erro ao criar jogador')
-            return
-        }
-        
-        players.push(newPlayer);
-        
-        $("#player-list").append(`<li>${playerName}</li>`);
-        $("#new-player-name").val("");
+
+        const playerOrder = players.length + 1;
+        const rating = createInitialRating();
+
+        await Promise.all(selectedPlayers.map(async playerName => {
+            try {
+                await findOrCreatePlayer(playerName, rating);
+            } catch {
+                alert(`Erro ao criar jogador ${playerName}`);
+            }
+        }));
+
+        selectedPlayers.forEach(playerName => {
+            players.push({
+                name: playerName,
+                matches: 0,
+                victories: 0,
+                defeats: 0,
+                lastPlayedMatch: 0,
+                playing: true,
+                order: playerOrder,
+                ...rating
+            });
+            $("#player-list").append(`<li>${playerName}</li>`);
+        })
+
+        $("#add-new-player-select").val(null).trigger('change');
+
+        getPlayers()
+            .then(p => {
+                const filteredPlayers = p.filter(player => !players.some(p => p.name === player.name));
+                $('#add-new-player-select').empty();
+                initPlayersSelect(filteredPlayers.sort((a, b) => a.name.localeCompare(b.name)));
+            })
         updatePlayerList();
     } finally {
         $("#add-new-player").removeAttr('disabled');
@@ -516,6 +552,8 @@ $("#start-match-day").click(async function() {
         maxPoints = parseInt($("#max-points").val());
         currentMatchMaxPoints = maxPoints;
         playersPerTeam = $("#players-per-team").val();
+
+        console.log('players', players)
         
         if (playersPerTeam * 2 > players.length) {
             alert("Sem jogadores suficientes para começar a partida.");
@@ -941,6 +979,25 @@ async function migrateToDatabase(players, gameDays) {
     }
 }
 
+function initPlayersSelect(players) {
+    $("#add-new-player-select").select2({
+        tags: true,
+        allowClear: true,
+        multiple: true,
+        closeOnSelect: false,
+        placeholder: "Selecione os jogadores",
+        language: {
+            noResults: function() {
+                return "Nenhum jogador encontrado. Adicione um novo jogador.";
+            }
+        },
+        data: players.map(player => ({
+            id: player.name,
+            text: player.name
+        }))
+    })
+}
+
 $(document).ready(async function (){
     const hasMigratedToDatabase = localStorage.getItem("migrated_to_database");
     const localStoragePlayers = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ELO_KEY));
@@ -953,13 +1010,17 @@ $(document).ready(async function (){
             localStorage.setItem("migrated_to_database", true);
         }
     }
+
+    const allPlayers = await getPlayers();
+    
     
     const activeGame = await getActiveGameDay();
     if(!activeGame) {
+        initPlayersSelect(allPlayers.sort((a, b) => a.name.localeCompare(b.name)));
         currentId = null;
         return
     }
-    
+
     if (activeGame.isLive) {
         maxPoints = activeGame.maxPoints;
         playersPerTeam = activeGame.playersPerTeam;
@@ -971,6 +1032,11 @@ $(document).ready(async function (){
         lastGameDayMatch = activeGame.lastMatch;
         joinCode = activeGame.joinCode;
         courtId = activeGame.courtId || null
+
+        initPlayersSelect(allPlayers
+            .filter(player => !players.some(p => p.name === player.name))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        );
         
         if(playingTeams.length === 0) {
             const playersToTeam = findNextMatchPlayers()

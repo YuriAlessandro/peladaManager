@@ -16,8 +16,9 @@ let currentId = 0;
 let autoSwitchTeamsPoints = 0;
 let joinCode = '';
 let lastGameDayMatch = 0;
-let courtId = null
+let courtId = null;
 const localStorage = window.localStorage;
+let playersToNextGame = [];
 
 const createSpinner = (id) => {
     const wrapper = document.createElement('span');
@@ -77,15 +78,10 @@ socket.on('game-day:updated',  async () => {
     lastGameDayMatch = activeGame.lastMatch;
     currentId = activeGame.id;
     joinCode = activeGame.joinCode;
-    courtId = activeGame.courtId || null
-    
-    if(playingTeams.length === 0) {
-        const playersToTeam = findNextMatchPlayers()
-        if(playersToTeam.length > 0) {
-            playingTeams = await generateTeams(playersToTeam);
-            await upsertGameDay();   
-        }
-    }
+    courtId = activeGame.courtId || null;
+    playersToNextGame = activeGame.playersToNextGame || [];
+
+    // await upsertGameDay();
     
     $('#add-new-player-select').empty();
     getPlayers()
@@ -96,7 +92,7 @@ socket.on('game-day:updated',  async () => {
 
 
     currentMatchMaxPoints = maxPoints;
-    updateCurrentMatch(playingTeams);
+    updatePlayerList();
     $("#new-match-day").hide();
     $("#new-match-day-form").hide();
     $("#new-match-day-button").hide();
@@ -208,9 +204,10 @@ async function updateGameDay(isLive = true) {
                 matches,
                 isLive,
                 autoSwitchTeamsPoints,
-                playedOn: new Date()
+                playedOn: new Date(),
+                playersToNextGame,
             })
-        })
+        });
         
         if(response.ok){
             socket.emit("game-day:updated", currentId);
@@ -337,7 +334,7 @@ function updatePlayerList() {
     const rows = playersToList.map(player => {
         const isPlayingHere = playingTeams.flat().some(p => p.name === player.name);
         const isPlayingSomewhereElse = otherPlayingTeams.flat().some(p => p.name === player.name);
-        const rowClass = isPlayingHere ? 'is-selected' : isPlayingSomewhereElse ? 'is-selected is-warning' : '';
+        const shouldBeOnNextMatch = playersToNextGame.some(p => p.name === player.name);
         const formatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
         const elo = devMode ? `${formatter.format(player.mu)}/${formatter.format(player.sigma)}` : '';
         const playingClass = isPlayingSomewhereElse
@@ -345,6 +342,18 @@ function updatePlayerList() {
         : player.playing
         ? 'remove-player is-clickable'
         : 'is-danger remove-player is-clickable';
+
+        let rowClass = '';
+        if (isPlayingHere) {
+            rowClass = 'is-selected';
+        } else if (isPlayingSomewhereElse) {
+            rowClass = 'is-selected is-warning';
+        } else if (shouldBeOnNextMatch) {
+            rowClass = 'is-info';
+        } else {
+            rowClass = player.playing ? 'remove-player is-clickable' : 'is-danger remove-player is-clickable';
+        }
+
         return `
         <tr class="${rowClass}">
             <th>${player.name}</th>
@@ -413,6 +422,9 @@ $("#all-player-list").on("click", ".remove-player", async function() {
     
     const playerIndex = players.findIndex(player => player.name === playerName);
     players[playerIndex].playing = !players[playerIndex].playing;
+
+    // Remove this player from next match
+    playersToNextGame = playersToNextGame.filter(player => player.name !== playerName);
     
     await upsertGameDay();
     updatePlayerList();
@@ -529,7 +541,7 @@ async function updateCurrentMatch(teams) {
 }
 
 $("#start-match-day").click(async function() {
-    const  startMatchDaySpinner = createSpinner('start-match-day-spinner');
+    const startMatchDaySpinner = createSpinner('start-match-day-spinner');
     const button = document.getElementById('start-match-day');
     button.insertAdjacentElement('afterend', startMatchDaySpinner);
     button.setAttribute('disabled', 'disabled');
@@ -552,8 +564,6 @@ $("#start-match-day").click(async function() {
         maxPoints = parseInt($("#max-points").val());
         currentMatchMaxPoints = maxPoints;
         playersPerTeam = $("#players-per-team").val();
-
-        console.log('players', players)
         
         if (playersPerTeam * 2 > players.length) {
             alert("Sem jogadores suficientes para começar a partida.");
@@ -566,7 +576,8 @@ $("#start-match-day").click(async function() {
         .filter(p => p.playing)
         .slice(0, playersPerTeam * 2);
         if(firstPlayers.length < playersPerTeam * 2) {
-            alert("Não há jogadores suficientes para começar a partida.");
+            alert("Não há jogadores suficientes para começar a partida nesta quadra agora.");
+
             return;
         }
         playingTeams = await generateTeams(firstPlayers);
@@ -645,8 +656,18 @@ async function endMatch(victoryTeam) {
         players[playerIndex].sigma = player.sigma;
     });
     
+    // Match is ended, no one is playing
+    playingTeams = [];
     
-    $("#match").hide();
+    $("#team-1-captain").text("");
+    $("#team-2-captain").text("");
+    $("#team-1-players").empty();
+    $("#team-2-players").empty();
+    $("#score-team-1").text("00");
+    $("#score-team-2").text("00");
+
+    updatePlayerList();
+
 }
 
 function findPlayerByName(players, name) {
@@ -691,6 +712,7 @@ function findNextMatchPlayers(winners = []) {
 
 
 async function startNewMatch(winningPlayers) {
+    $("#start-next-match").hide();
     $("#match").show();
     $("#score-team-1").text("00");
     $("#score-team-2").text("00");
@@ -702,9 +724,14 @@ async function startNewMatch(winningPlayers) {
     
     const nextMatchPlayers = findNextMatchPlayers(winningPlayers);
     currentMatchMaxPoints = maxPoints;
+    
+    // Remove players from this match from players next game
+    playersToNextGame = playersToNextGame.filter(player => !findPlayerByName(nextMatchPlayers, player.name));
+
     randomServe();
     await updateCurrentMatch(await generateTeams(nextMatchPlayers));
     await upsertGameDay();
+    updatePlayerList();
 }
 
 function randomServe() {
@@ -746,17 +773,33 @@ $(".score-point").click(async function() {
     }
     
     if (team1Score >= currentMatchMaxPoints && diff >= 2) {
-        await endMatch(0);
-        await startNewMatch(playingTeams[0]);
+        let confirmEndGame = window.confirm(`Time ${playingTeams[0][0].name} venceu a partida? Confirmar para encerrar.`);
+        
+        if (confirmEndGame) {
+            $("#start-next-match").show();
+            playersToNextGame = playersToNextGame.concat(playingTeams[0]);
+            await endMatch(0);
+            await upsertGameDay();
+        }
     } else if (team2Score >= currentMatchMaxPoints && diff >= 2) {
-        await endMatch(1);
-        await startNewMatch(playingTeams[1]);
+        let confirmEndGame = window.confirm(`Time ${playingTeams[1][0].name} venceu a partida? Confirmar para encerrar.`);
+        
+        if (confirmEndGame) {
+            $("#start-next-match").show();
+            playersToNextGame = playersToNextGame.concat(playingTeams[1]);
+            await endMatch(1);
+            await upsertGameDay();
+        }
     }
-    
+
     if (autoSwitchTeamsPoints > 0) {
         const totalPoints = team1Score + team2Score;
         if (totalPoints % autoSwitchTeamsPoints === 0) swapTeams();
     }
+});
+
+$("#start-next-match").click(async function() {
+    await startNewMatch(playersToNextGame);
 });
 
 $(".undo-point").click(function() {
@@ -767,10 +810,12 @@ $(".undo-point").click(function() {
     
     if (teamIndex === "undo-1") {
         team1Score -= 1;
-        $("#score-team-1").text(team1Score >= 0 ? team1Score : 0);
+        const value = team1Score >= 0 ? team1Score : 0;
+        $("#score-team-1").text(value.toString().padStart(2, 0));
     } else if (teamIndex === "undo-2") {
         team2Score -= 1;
-        $("#score-team-2").text(team2Score >= 0 ? team2Score : 0);
+        const value = team2Score >= 0 ? team2Score : 0;
+        $("#score-team-2").text(value.toString().padStart(2, 0));
     }
     
     upsertGameDay();
@@ -867,24 +912,6 @@ $("#change-match-day").click(function() {
     
     $("#players-per-team").val(playersPerTeam);
     $("#max-points").val(maxPoints);
-});
-
-$("#end-current-match").click(async function() {
-    let team1Score = parseInt($("#score-team-1").text());
-    let team2Score = parseInt($("#score-team-2").text());
-    
-    if (team1Score === team2Score) {
-        alert("Partida empatada, não é possível encerrar. Decida um vencedor.");
-        return;
-    }
-    
-    const winningTeam = team1Score > team2Score ? 0 : 1;
-    const losingTeam = 1 - winningTeam;
-    
-    const confirm = window.confirm("Deseja realmente encerrar a partida?");
-    if (confirm) {
-        await startNewMatch(playingTeams[winningTeam], playingTeams[losingTeam]);
-    }
 });
 
 async function swapTeams() {
@@ -1059,4 +1086,11 @@ $(document).ready(async function (){
         }
         socket.emit('join', currentId);
     }
+});
+
+history.pushState(null, null, window.top.location.pathname + window.top.location.search);
+window.addEventListener('popstate', (e) => {
+    e.preventDefault();
+    // Insert Your Logic Here, You Can Do Whatever You Want
+    history.pushState(null, null, window.top.location.pathname + window.top.location.search);
 });

@@ -48,6 +48,30 @@
             display: flex !important;
             padding: 11px 17px !important;
         }
+
+        .select2-container--default .select2-selection--multiple {
+            background-color: hsl(171deg, 100%,calc(9% + 0%));
+            border-color: hsl(171deg, 100%,calc(41% + 0%));
+            border-radius: var(--bulma-input-radius);
+            color: hsl(var(--bulma-input-h), var(--bulma-input-s), var(--bulma-input-color-l));
+        }
+
+        .select2-dropdown {
+            background-color: hsl(171deg, 100%,calc(9% + 0%));
+            border-color: hsl(171deg, 100%,calc(41% + 0%));
+            color: hsl(var(--bulma-input-h), var(--bulma-input-s), var(--bulma-input-color-l));
+        }
+
+        .select2-container--default .select2-results__option[aria-selected=true],
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: hsl(171deg, 100%,calc(41% + 0%));
+            border-color: black;
+            color: black;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: hsl(171deg, 100%,calc(9% + 0%));  
+        }
     </style>
 
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
@@ -144,6 +168,7 @@
                 </div>
                 <div class="cell is-row-span-2 has-text-centered">
                     <h1 class="title">X</h1>
+                    <button id="start-next-match" class="button is-danger is-large" style="margin-top: 160px; display: none">Iniciar próxima partida</button>
                 </div>
                 <div class="cell has-text-centered">
                     <h1 id="team-2-captain" class="title">TEAM 2 CAPTAIN</h1>
@@ -162,7 +187,6 @@
                 <div class="grid">
                     <div class="cell">
                         <button id="swap-current-match" class="button is-warning is-large"><i class="fa-solid fa-right-left"></i></button>
-                        <button id="end-current-match" class="button is-warning is-large"><i class="fa-solid fa-stop"></i></button>
                     </div>
                     <div class="cell  is-col-from-end-1">
                         <button id="change-match-day" class="button is-info is-large"><i class="fa-solid fa-gear"></i></button>
@@ -196,7 +220,7 @@
             <button id="end-court" class="button is-danger is-large" style="display: none;">FINALIZAR QUADRA</button>
             <label class="checkbox">
                 <input type="checkbox" id="dev-mode" />
-                v5.Modo desenvolvedor
+                v6.Modo desenvolvedor
             </label>
         </div>
     </div>
@@ -211,7 +235,7 @@
       integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
       crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-    <script type="module" src="./index.js?v=6"></script>
+    <script type="module" src="./index.js?v=7"></script>
     <script>
     const options = window.location.hostname.includes('localhost') || window.location.hostname.includes('ngrok-free.app')
         ? undefined : { scope: '/peladaManager/' };

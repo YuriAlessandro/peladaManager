@@ -76,6 +76,12 @@
         .select2-container--default .select2-search--inline .select2-search__field {
             color: white;
         }
+
+        .legend-box {
+            padding: 3px;
+            display: 'inline-block';
+            font-size: 12px;
+        }
     </style>
 
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
@@ -200,7 +206,14 @@
         </div>
 
         <nav class="panel" id="all-player-list" style="display: none; margin-top: 5px">
-            <p class="panel-heading">Jogadores</p>
+            <div class="panel-heading" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+                <p>Jogadores
+                <div style="display: flex; flex-direction: row; gap: 10px">
+                    <div class="legend-box has-background-success">Na partida atual</div>
+                    <div class="legend-box has-background-warning">Em outra quadra</div>
+                    <div class="legend-box has-background-info">Joga a próx.</div>
+                </div>
+            </div>
             <div class="table-container">
                 <table class="table is-fullwidth">
                     <thead>

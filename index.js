@@ -749,6 +749,10 @@ function randomServe() {
 const formatScore = (score) => String(score).padStart(2, 0)
 
 $(".score-point").click(async function() {
+    if (!playingTeams.length) {
+        return;
+    }
+    
     const teamIndex = $(this).attr("id");
     
     let team1Score = parseInt($("#score-team-1").text());

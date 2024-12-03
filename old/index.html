@@ -1,0 +1,270 @@
+<html>
+<head>
+    <title>Placar Vôlei</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <script src="https://kit.fontawesome.com/15fce56598.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        @font-face {
+            font-family: Digital7;
+            src: url("assets/digital_7.ttf");
+        }
+        .score-container {
+            height: 5.2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .score-container p {
+            padding: 0;
+            margin: 0;
+            font-size: 3em;
+            font-family: Digital7;
+            color: white;
+            z-index: 0;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            text-align: left;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            min-width: 0.9em;
+        }
+        .score-container p::before {
+            content: "88";
+            position: absolute;
+            color: #cecece;
+            opacity: 0.1;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .select2-container {
+            font-size: 1.5rem !important;
+        }
+
+        .select2-search {
+            display: flex !important;
+            padding: 11px 17px !important;
+        }
+
+        .select2-container--default .select2-selection--multiple {
+            background-color: hsl(171deg, 100%,calc(9% + 0%));
+            border-color: hsl(171deg, 100%,calc(41% + 0%));
+            border-radius: var(--bulma-input-radius);
+            color: hsl(var(--bulma-input-h), var(--bulma-input-s), var(--bulma-input-color-l));
+        }
+
+        .select2-dropdown {
+            background-color: hsl(171deg, 100%,calc(9% + 0%));
+            border-color: hsl(171deg, 100%,calc(41% + 0%));
+            color: hsl(var(--bulma-input-h), var(--bulma-input-s), var(--bulma-input-color-l));
+        }
+
+        .select2-container--default .select2-results__option[aria-selected=true],
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: hsl(171deg, 100%,calc(41% + 0%));
+            border-color: black;
+            color: black;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: hsl(171deg, 100%,calc(9% + 0%));  
+        }
+
+        .select2-container--default .select2-search--inline .select2-search__field {
+            color: white;
+        }
+
+        .legend-box {
+            padding: 3px;
+            display: 'inline-block';
+            font-size: 12px;
+        }
+    </style>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="manifest" href="https://raw.githubusercontent.com/YuriAlessandro/peladaManager/main/manifest.json">
+</head>
+<body>
+    <div id="new-match-day-button" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90vh; gap: 24px">
+        <div class="is-flex is-align-items-center is-justify-content-center">
+            <button id="new-match-day" class="button is-primary is-large" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i>&ensp;Começar Nova Pelada</button>
+            <button id="show-historic" class="button is-primary is-large"><i class="fa-regular fa-clock"></i></i>&ensp;Histórico</button>
+        </div>
+        <form class="is-flex is-flex-direction-column" id="join-match-day-form">
+            <label for="join-code-input" class="label">
+                Código da Pelada:
+            </label>
+            <input type="text" id="join-code-input" class="input is-primary is-large" />
+            <button id="join-match-day" class="button is-primary is-large" style="margin-top: 15px;">Entrar em Pelada</button>
+        </form>
+    </div>
+    <div class="container mobile" style="padding: 15px">
+
+        <div id="new-match-day-form" style="display: none">
+            <div class="columns">
+                <div class="column">
+                    <label>Jogadores por time:</label>
+                    <input type="number" id="players-per-team" placeholder="Jogadores por time" value="4" class="input is-primary is-large" />
+                </div>
+                <div class="column">
+                    <label>Pontos Máximos:</label>
+                    <input type="number" id="max-points" placeholder="Pontos máximos" value="11" class="input is-primary is-large" />
+                </div>
+            </div>
+            <div class="columns">
+                <div class="column is-size-3">
+                    <label class="checkbox">
+                        <input type="checkbox" id="auto-switch-teams" />
+                        Trocar times automaticamente
+                    </label>
+                </div>
+                <div class="column">
+                    <label>Trocar times a cada:</label>
+                    <input type="number" placeholder="Quantidade de pontos" id="auto-switch-teams-points" disabled class="input is-primary is-large" value="5" />
+                </div>
+            </div>
+            <div class="columns">
+                <div class="column">
+                     <label
+                        for="add-new-player-select"
+                    >Selecione os jogadores:</label>
+                    <select 
+                        id="add-new-player-select"
+                        class="select is-primary is-large"
+                        style="width: 100%"
+                        data-placeholder="Selecione os jogadores"
+                        multiple="multiple"
+                    >
+                    </select>
+                </div>
+                <div class="column" style="display: flex; align-items: flex-end;">
+                    <button id="add-new-player" type="button" class="button is-secondary is-large">Confirmar Jogadores</button>
+                </div>
+            </div>
+            
+            <ul id="player-list" class="content"></ul>
+            <div class="is-flex is-align-items-center" style="gap: 8px">
+                <button id="start-match-day" class="button is-primary is-large">Iniciar Pelada</button>
+                <button id="update-match-day" class="button is-primary is-large" style="display: none; margin-bottom: 15px;">Atualizar Pelada</button>
+            </div>
+        </div>
+
+        <div id="match" style="display: none" class="box">
+            <div class=" is-flex is-justify-content-space-between is-align-items-center mb-4">
+                <div class="">Partida #<span id="match-number">0</span></div>
+                <div class="is-flex is-align-items-center is-gap-2">
+                    <span class="has-text-centered">Código</span>
+                    <button id="copy-join-code" type="button" class="button is-small is-info">
+                        <i class="fa-solid fa-copy mr-2"></i><span id="join-code" class=" is-size-5"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="grid">
+                <div class="cell has-text-centered">
+                    <h1 id="team-1-captain" class="title">TEAM 1 CAPTAIN</h1>
+                    <button id="undo-1" class="undo-point button is-danger is-large"><i class="fa-solid fa-undo"></i></button>
+                    <article class="message is-info score-point" style="cursor: pointer; margin-top: 15px;" id="score-1">
+                        <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-1"></i></div>
+                        <div class="message-body is-size-1 score-container">
+                            <p id="score-team-1">00</p>
+                        </div>
+                    </article>
+                    <ul id="team-1-players"></ul>
+                </div>
+                <div class="cell is-row-span-2 has-text-centered">
+                    <h1 class="title">X</h1>
+                    <button id="start-next-match" class="button is-danger is-large" style="margin-top: 160px; display: none">Iniciar próxima partida</button>
+                </div>
+                <div class="cell has-text-centered">
+                    <h1 id="team-2-captain" class="title">TEAM 2 CAPTAIN</h1>
+                    <button id="undo-2" class="undo-point button is-danger is-large"><i class="fa-solid fa-undo"></i></button>
+                    <article class="message is-danger score-point" style="cursor: pointer; margin-top: 15px;" id="score-2">
+                        <div class="message-header is-size-7"><i class="fa-solid fa-play" style="display: none" id="serving-2"></i></div>
+                        <div class="message-body is-size-1 score-container">
+                            <p id="score-team-2">00</p>
+                        </div>
+                    </article>
+                    <ul id="team-2-players"></ul>
+                </div>
+            </div>
+
+            <div class="fixed-grid has-2-cols">
+                <div class="grid">
+                    <div class="cell">
+                        <button id="swap-current-match" class="button is-warning is-large"><i class="fa-solid fa-right-left"></i></button>
+                    </div>
+                    <div class="cell  is-col-from-end-1">
+                        <button id="change-match-day" class="button is-info is-large"><i class="fa-solid fa-gear"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="panel" id="all-player-list" style="display: none; margin-top: 5px">
+            <div class="panel-heading" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+                <p>Jogadores
+                <div style="display: flex; flex-direction: row; gap: 10px">
+                    <div class="legend-box has-background-success">Na partida atual</div>
+                    <div class="legend-box has-background-warning">Em outra quadra</div>
+                    <div class="legend-box has-background-info">Joga a próx.</div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Partidas</th>
+                            <th>Vitórias</th>
+                            <th>Derrotas</th>
+                            <th>Última partida jogada</th>
+                            <th style="display: none;" id="elo-header">Elo</th>
+                            <th id="playing">Jogando</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players"></tbody>
+                </table>
+            </div>
+        </nav>
+
+        <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 1rem">
+            <button id="end-match-day" class="button is-danger is-large" style="display: none;">FINALIZAR PELADA</button>
+            <button id="end-court" class="button is-danger is-large" style="display: none;">FINALIZAR QUADRA</button>
+            <label class="checkbox">
+                <input type="checkbox" id="dev-mode" />
+                v6.Modo desenvolvedor
+            </label>
+        </div>
+    </div>
+    <div class="container mobile" id="history-container" style="padding: 15px; display: none;">
+        <h1>Histórico de Partidas</h1>
+        <div class="fixed-grid has-3-cols">
+            <div class="grid" id="historic-days"></div>
+        </div>
+    </div>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <script type="module" src="./index.js?v=17"></script>
+    <script>
+    const options = window.location.hostname.includes('localhost') || window.location.hostname.includes('ngrok-free.app')
+        ? undefined : { scope: '/peladaManager/' };
+    if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./serviceWorker.js', options)
+            .then(function(registration) {
+                console.log('Service Worker Registered');
+            })
+            .catch(function(err) {
+                console.log('Service Worker Failed to Register', err);
+            });
+    }
+    </script>
+</body>
+</html>

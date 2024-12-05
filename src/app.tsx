@@ -12,11 +12,12 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="criar-pelada" element={<CreateGameDay />} />
+        <Route path="entrar-pelada/:id" element={<CreateGameDay />} />
         <Route path="pelada" element={<GameDay />} />
         <Route path="historico">
-            <Route index element={<History />} />
-            <Route path=":id" element={<HistoryMatch />} />
-          </Route>
+          <Route index element={<History />} />
+          <Route path=":id" element={<HistoryMatch />} />
+        </Route>
       </Route>
     </Routes>
   );

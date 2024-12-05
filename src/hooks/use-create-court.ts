@@ -1,21 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { api } from "../api";
-import { findBestTeamMatch } from "../lib/elo";
-import { GameDayPlayer, Player } from "../types";
-import { useNavigate } from "react-router";
 import { useState } from "react";
-
-const toGameDayPlayer = (player: Player, index: number): GameDayPlayer => ({
-  name: player.name,
-  matches: 0,
-  victories: 0,
-  defeats: 0,
-  lastPlayedMatch: 0,
-  playing: true,
-  order: index + 1,
-});
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
+import { z } from "zod";
 
 const schema = z.object({
   playersPerTeam: z
@@ -38,11 +25,17 @@ const schema = z.object({
   ),
 });
 
-type FormData = z.infer<typeof schema>;
+export type CreateCourtFormData = z.infer<typeof schema>;
 
-export const useCreateCourtForm = (first = true) => {
+export const useCreateCourtForm = (
+  onSubmit: (data: CreateCourtFormData) => Promise<{
+    id: string;
+    courtId: string;
+    joinCode: string;
+  } | null>
+) => {
   const navigate = useNavigate();
-  const form = useForm<FormData>({
+  const form = useForm<CreateCourtFormData>({
     resolver: zodResolver(schema),
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -55,7 +48,7 @@ export const useCreateCourtForm = (first = true) => {
           type: "manual",
           message: "Informe o número de pontos para trocar de time",
         });
-        return
+        return;
       }
 
       if (
@@ -67,7 +60,7 @@ export const useCreateCourtForm = (first = true) => {
           message:
             "O número de pontos para trocar de time deve ser menor que o máximo de pontos",
         });
-        return
+        return;
       }
 
       if (data.playersPerTeam * 2 > data.players.length) {
@@ -76,36 +69,11 @@ export const useCreateCourtForm = (first = true) => {
           message:
             "O número de jogadores é menor que o número de jogadores por time",
         });
-        return
-      }
-
-      if (!first) {
-        console.log("Handle new courts");
         return;
       }
 
-      const players = data.players.map((player) => player.value);
-      const playersToFirstMatch = players.slice(0, data.playersPerTeam * 2);
-      const bestMatch = findBestTeamMatch(playersToFirstMatch);
+      const gameDay = await onSubmit(data);
 
-      const gameDay = await api.createGameDay({
-        maxPoints: data.maxPoints,
-        playersPerTeam: data.playersPerTeam,
-        players: players.map((p, i) => ({
-          ...toGameDayPlayer(p, i),
-          mu: p.mu,
-          sigma: p.sigma,
-        })),
-        playingTeams: [
-          bestMatch.teamA.map(toGameDayPlayer),
-          bestMatch.teamB.map(toGameDayPlayer),
-        ],
-        matches: 0,
-        isLive: true,
-        autoSwitchTeamsPoints: data.autoSwitchTeamsPoints ?? 0,
-        playedOn: new Date(),
-
-      });
       if (!gameDay) {
         form.setError("root", {
           type: "manual",

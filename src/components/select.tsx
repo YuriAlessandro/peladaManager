@@ -17,7 +17,6 @@ const Select = <
     classNames={{
       control: ({ isDisabled }) =>
         {
-          console.log('isDisabled', isDisabled);
           return `!tw-bg-emerald-400 !tw-bg-opacity-10 tw-py-2 tw-rounded-lg !tw-border-emerald-400 disabled:!tw-bg-emerald-400
         ${isDisabled && "tw-opacity-50"}
       `;

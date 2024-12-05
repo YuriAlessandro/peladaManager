@@ -227,7 +227,10 @@ const GameDay = () => {
     <>
       <div className="tw-flex tw-items-center tw-justify-between">
         <h2 className="tw-text-stone-300">
-          Partida #{activeGameDay.data.matches + 1}
+          Partida #{activeGameDay.data.matches + 1} /{" "}
+          <span>
+            Quadra #{activeGameDay.data.courtId.slice(-5)}
+          </span>
         </h2>
         <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
           <FaCopy />#{activeGameDay.data.joinCode}

@@ -21,6 +21,7 @@ export type PlayerRating = {
 
 export type GameDay = {
   id: string;
+  courtId: string;
   maxPoints: number;
   playersPerTeam: number;
   players: (GameDayPlayer & PlayerRating)[];

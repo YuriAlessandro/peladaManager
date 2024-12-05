@@ -20,7 +20,7 @@ const putPlayer = async (player: Player) => {
     console.error(error);
     return null;
   }
-}
+};
 
 const updatePlayers = async (players: Player[]) => {
   try {
@@ -37,7 +37,7 @@ const updatePlayers = async (players: Player[]) => {
     console.error(error);
     return null;
   }
-}
+};
 
 const getPlayers = async (params: URLSearchParams) => {
   try {
@@ -52,9 +52,18 @@ const getPlayers = async (params: URLSearchParams) => {
   }
 };
 
-type OmitProps = 'id' | 'otherPlayingTeams' | 'lastMatch' | 'joinCode' | 'joinCodeExpiration' | 'playersToNextGame';
+type OmitProps =
+  | "id"
+  | "otherPlayingTeams"
+  | "lastMatch"
+  | "joinCode"
+  | "joinCodeExpiration"
+  | 'courtId'
+  | "playersToNextGame";
 
-const createGameDay = async (gameDay: Omit<GameDay, OmitProps>) => {
+export type CreateGameDayParams =  Omit<GameDay, OmitProps>
+
+const createGameDay = async (gameDay: CreateGameDayParams) => {
   try {
     const res = await fetch(`${API_URL}/game-days`, {
       method: "POST",
@@ -64,12 +73,12 @@ const createGameDay = async (gameDay: Omit<GameDay, OmitProps>) => {
       body: JSON.stringify(gameDay),
       credentials: "include",
     });
-    if(!res.ok) return null;
-    const data = await res.json() as {
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
       id: string;
       courtId: string;
       joinCode: string;
-    }
+    };
     return data;
   } catch (error) {
     console.error(error);
@@ -92,7 +101,7 @@ const updateGameDay = async (gameDay: GameDay) => {
     console.error(error);
     return null;
   }
-}
+};
 
 const getActiveGameDay = async () => {
   try {
@@ -100,13 +109,13 @@ const getActiveGameDay = async () => {
       credentials: "include",
     });
     if (!res.ok) return null;
-    const gameDay = await res.json() as GameDay;
+    const gameDay = (await res.json()) as GameDay;
     return gameDay;
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
 const getGameDays = async () => {
   try {
@@ -114,11 +123,29 @@ const getGameDays = async () => {
       credentials: "include",
     });
     if (!res.ok) return [];
-    const gameDays = await res.json() as GameDay[];
+    const gameDays = (await res.json()) as GameDay[];
     return gameDays;
   } catch (error) {
     console.error(error);
     return [];
+  }
+};
+
+async function joinGameDay(joinCode: string) {
+  try {
+    const response = await fetch(`${API_URL}/game-days/join/${joinCode}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      return false;
+    }
+    return (await response.json()) as GameDay
+  } catch {
+    return false;
   }
 }
 
@@ -130,4 +157,5 @@ export const api = {
   getActiveGameDay,
   updateGameDay,
   getGameDays,
+  joinGameDay,
 };

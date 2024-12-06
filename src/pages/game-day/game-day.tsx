@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from "react";
 import { FaCopy } from "react-icons/fa";
 import { FaGear, FaRightLeft } from "react-icons/fa6";
 import { VscLoading } from "react-icons/vsc";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { api } from "../../api";
 import Button from "../../components/button";
 import PlayersTable from "../../components/players-table";
@@ -228,9 +228,7 @@ const GameDay = () => {
       <div className="tw-flex tw-items-center tw-justify-between">
         <h2 className="tw-text-stone-300">
           Partida #{activeGameDay.data.matches + 1} /{" "}
-          <span>
-            Quadra #{activeGameDay.data.courtId.slice(-5)}
-          </span>
+          <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span>
         </h2>
         <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
           <FaCopy />#{activeGameDay.data.joinCode}
@@ -291,9 +289,11 @@ const GameDay = () => {
         <Button className="!tw-bg-amber-400">
           <FaRightLeft />
         </Button>
-        <Button className="tw-bg-sky-300">
-          <FaGear />
-        </Button>
+        <Link to="/pelada/editar">
+          <Button className="tw-bg-sky-300">
+            <FaGear />
+          </Button>
+        </Link>
       </div>
       <PlayersTable showElo={showElo} gameDay={activeGameDay.data} />
       <div className="tw-flex tw-gap-2">

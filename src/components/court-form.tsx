@@ -1,30 +1,99 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { Controller } from "react-hook-form";
-import { FaVolleyball } from "react-icons/fa6";
-import { VscLoading } from "react-icons/vsc";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
+import { z } from "zod";
 import { api } from "../api";
-import {
-  CreateCourtFormData,
-  useCreateCourtForm,
-} from "../hooks/use-create-court";
 import { usePlayers } from "../hooks/use-players";
 import { createInitialRating } from "../lib/elo";
 import BackButton from "./back-button";
-import Button from "./button";
 import Input from "./input";
 import Select from "./select";
 
+const schema = z.object({
+  playersPerTeam: z
+    .number({ coerce: true, message: "Informe um número maior que 0" })
+    .min(1, { message: "Informe um número maior que 0" }),
+  maxPoints: z
+    .number({ coerce: true, message: "Informe um número maior que 0" })
+    .min(1, { message: "Informe um número maior que 0" }),
+  autoSwitchTeams: z.boolean().optional(),
+  autoSwitchTeamsPoints: z.number({ coerce: true }).optional(),
+  players: z.array(
+    z.object({
+      value: z.object({ name: z.string(), mu: z.number(), sigma: z.number() }),
+      label: z.string(),
+      __isNew__: z.boolean().optional(),
+      isFixed: z.boolean().optional(),
+    }),
+    {
+      message: "Informe pelo menos um jogador",
+    }
+  ),
+});
+
+export type CourtFormData = z.infer<typeof schema>;
+
 type Props = {
-  onSubmit: (data: CreateCourtFormData) => Promise<{
-    id: string;
-    courtId: string;
-    joinCode: string;
-  } | null>;
+  onSubmit: (data: CourtFormData) => Promise<boolean>;
+  submitButton: (isSubmitting: boolean) => React.ReactNode;
+  initialValues?: CourtFormData;
 };
 
-const CreateCourtForm = ({ onSubmit }: Props) => {
+const CourtForm = ({ onSubmit, submitButton, initialValues }: Props) => {
   const players = usePlayers();
-  const { form, handleSubmit, isCreating } = useCreateCourtForm(onSubmit);
+  const navigate = useNavigate();
+  const form = useForm<CourtFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: initialValues,
+  });
+
+  const handleSubmit = form.handleSubmit(async (data) => {
+    try {
+      if (data.autoSwitchTeams && !data.autoSwitchTeamsPoints) {
+        form.setError("autoSwitchTeamsPoints", {
+          type: "manual",
+          message: "Informe o número de pontos para trocar de time",
+        });
+        return;
+      }
+
+      if (
+        data.autoSwitchTeamsPoints &&
+        data.autoSwitchTeamsPoints >= data.maxPoints
+      ) {
+        form.setError("autoSwitchTeamsPoints", {
+          type: "manual",
+          message:
+            "O número de pontos para trocar de time deve ser menor que o máximo de pontos",
+        });
+        return;
+      }
+
+      if (data.playersPerTeam * 2 > data.players.length) {
+        form.setError("players", {
+          type: "manual",
+          message:
+            "O número de jogadores é menor que o número de jogadores por time",
+        });
+        return;
+      }
+
+      const gameDay = await onSubmit(data);
+
+      if (!gameDay) {
+        form.setError("root", {
+          type: "manual",
+          message: "Erro ao criar jogo",
+        });
+      }
+
+      navigate("/pelada");
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   const [isCreatingPlayer, setIsCreatingPlayer] = useState(false);
   const options =
     players.data
@@ -58,9 +127,8 @@ const CreateCourtForm = ({ onSubmit }: Props) => {
     }
   };
 
-  console.log('errors', form.formState.errors)
-
   const autoSwitchTeams = form.watch("autoSwitchTeams");
+
   return (
     <form className="tw-flex tw-flex-col tw-gap-5" onSubmit={handleSubmit}>
       <BackButton />
@@ -157,17 +225,9 @@ const CreateCourtForm = ({ onSubmit }: Props) => {
           )}
         </div>
       </div>
-
-      <Button className="tw-gap-2" disabled={isCreating} type="submit">
-        {isCreating ? (
-          <VscLoading className="tw-animate-spin" />
-        ) : (
-          <FaVolleyball />
-        )}{" "}
-        Iniciar pelada
-      </Button>
+      {submitButton(form.formState.isSubmitting)}
     </form>
   );
 };
 
-export default CreateCourtForm;
+export default CourtForm;

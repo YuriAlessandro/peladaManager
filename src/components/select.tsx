@@ -23,7 +23,12 @@ const Select = <
         },
       container: () => "!tw-rounded-lg",
       menuList: () => "!tw-bg-emerald-400 !tw-bg-opacity-10",
-      multiValueRemove: () => "!tw-text-stone-600",
+      multiValueRemove: ({ data }) => (
+        typeof data === 'object' && data && 'isFixed' in data && data.isFixed ? '!tw-hidden' : 'tw-text-gray-600' 
+      ),
+      multiValueLabel: ({ data }) => (
+        typeof data === 'object' && data && 'isFixed' in data && data.isFixed ? '!tw-pr-2' : ''
+      ),
       clearIndicator: () => "hover:!tw-text-white tw-cursor-pointer",
       dropdownIndicator: () => "hover:!tw-text-white tw-cursor-pointer",
       input: () => "!tw-text-white",

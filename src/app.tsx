@@ -5,6 +5,7 @@ import GameDay from "./pages/game-day/game-day";
 import History from "./pages/history/history";
 import Layout from "./pages/layout";
 import HistoryMatch from "./pages/history/history-match";
+import EditGameDay from "./pages/game-day/edit/edit-game-day";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="criar-pelada" element={<CreateGameDay />} />
         <Route path="entrar-pelada/:id" element={<CreateGameDay />} />
         <Route path="pelada" element={<GameDay />} />
+        <Route path="pelada/editar" element={<EditGameDay />} />
         <Route path="historico">
           <Route index element={<History />} />
           <Route path=":id" element={<HistoryMatch />} />

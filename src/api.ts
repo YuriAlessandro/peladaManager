@@ -86,7 +86,10 @@ const createGameDay = async (gameDay: CreateGameDayParams) => {
   }
 };
 
-const updateGameDay = async (gameDay: GameDay) => {
+type UpdateGameDayOmitProps = 'id' | 'courtId' | 'joinCode' | 'joinCodeExpiration' | 'otherPlayingTeams' | 'lastMatch';
+
+const updateGameDay = async (gameDay: Omit<GameDay, UpdateGameDayOmitProps>) => {
+  
   try {
     const res = await fetch(`${API_URL}/sessions/game-day`, {
       method: "PUT",

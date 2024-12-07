@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect } from "react";
-import { FaCopy } from "react-icons/fa";
+import { FaCopy, FaFlagCheckered, FaPlay, FaStopCircle } from "react-icons/fa";
 import { FaGear, FaRightLeft } from "react-icons/fa6";
 import { VscLoading } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router";
 import { api } from "../../api";
 import Button from "../../components/button";
-import PlayersTable from "../../components/players-table";
+import PlayersTable from "../../components/players-table";  
 import { useActiveGameDay } from "../../hooks/use-active-game-day";
 import { findBestTeamMatch, updateRatings } from "../../lib/elo";
 import { findNextMatchPlayers } from "../../lib/next-match";
@@ -80,7 +80,6 @@ const GameDay = () => {
         activeGameDay.data.playingTeams[winner]
       ),
       matches: activeGameDay.data.matches + 1,
-      lastMatch: activeGameDay.data.lastMatch + 1,
       playingTeams: [],
       playedOn: new Date(),
       players: activeGameDay.data.players.map((player) => {
@@ -223,6 +222,21 @@ const GameDay = () => {
     navigate(`/historico/${activeGameDay.data.id}?origin=game-day`)
   };
 
+  const endCourt = async () => {
+    const confirm = window.confirm("Deseja finalizar a quadra?");
+    if (!confirm) {
+      return;
+    }
+
+    if (!activeGameDay.data) return;
+    const ok = await api.leaveGameDay()
+    if(!ok) {
+      return alert('Quadra não pôde ser finalizada')
+    }
+
+    navigate('/')
+  }
+
   return (
     <>
       <div className="tw-flex tw-items-center tw-justify-between">
@@ -247,9 +261,9 @@ const GameDay = () => {
             <Button
               onClick={startNewMatch}
               disabled={isStartingNewMatch}
-              className="tw-self-center tw-bg-rose-400 tw-gap-2"
+              className="tw-self-center tw-bg-rose-400 tw-gap-2 tw-text-base tw-font-medium"
             >
-              {isStartingNewMatch && <VscLoading className="tw-animate-spin" />}
+              {isStartingNewMatch ? <VscLoading className="tw-animate-spin" /> : <FaPlay />}
               Iniciar próxima partida
             </Button>
             <TeamScoreBoard
@@ -285,25 +299,29 @@ const GameDay = () => {
           </>
         )}
       </div>
-      <div className="tw-flex tw-justify-end tw-gap-2">
-        <Button className="!tw-bg-amber-400">
-          <FaRightLeft />
-        </Button>
+      <div className="tw-flex tw-justify-between tw-gap-2">
         <Link to="/pelada/editar">
-          <Button className="tw-bg-sky-300">
-            <FaGear />
+          <Button className="tw-bg-sky-300 tw-text-base">
+            <FaGear /> Configurar Quadra
           </Button>
         </Link>
+        <Button className="!tw-bg-amber-400 tw-text-base">
+          <FaRightLeft /> Inverter Times
+        </Button>
       </div>
       <PlayersTable showElo={showElo} gameDay={activeGameDay.data} />
       <div className="tw-flex tw-gap-2">
         <Button
-          className="tw-flex-1 tw-bg-rose-400 tw-px-6"
+          className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
           onClick={endMatchDay}
         >
+          <FaFlagCheckered />
           Finalizar Pelada
         </Button>
-        <Button className="tw-flex-1 tw-bg-rose-400 tw-px-6">
+        <Button className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
+          onClick={endCourt}
+        >
+          <FaStopCircle />
           Finalizar Quadra
         </Button>
         <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">

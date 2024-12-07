@@ -152,13 +152,29 @@ async function joinGameDay(joinCode: string) {
   }
 }
 
+async function leaveGameDay() {
+  try {
+    const response = await fetch(`${API_URL}/sessions/game-day/leave`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export const api = {
   getPlayers,
-  updatePlayers: updatePlayers,
+  updatePlayers,
   putPlayer,
   createGameDay,
   getActiveGameDay,
   updateGameDay,
   getGameDays,
   joinGameDay,
+  leaveGameDay,
 };

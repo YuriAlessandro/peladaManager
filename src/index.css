@@ -1,0 +1,23 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: Digital7;
+  src: url("./assets/digital_7.ttf")
+}
+
+html {
+  font-family: 'Inter', sans-serif;
+}
+
+.score-container h3::before {
+  content: "88";
+  position: absolute;
+  color: #cecece;
+  opacity: 0.1;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

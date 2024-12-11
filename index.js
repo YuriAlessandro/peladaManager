@@ -435,13 +435,21 @@ $("#new-match-day").click(function() {
     $("#new-match-day-button").hide();
 });
 
+let selectionOrder = [];
+
+
 $('#add-new-player-select').on('select2:select', function (e) {
-    $('.select2-search__field').val('');
+    selectionOrder.push(e.params.data.text);
 });
+
+$('#add-new-player-select').on('select2:unselect', function (e) {
+    const index = selectionOrder.indexOf(e.params.data.text);
+    selectionOrder.splice(index, 1);
+})
 
 async function addNewPlayer(){
     try {
-         const selectedPlayers = $("#add-new-player-select").select2('data').map(player => player.text);
+         const selectedPlayers = selectionOrder;
 
         if(selectedPlayers.length === 0) {
             alert("Selecione ao menos um jogador.");
@@ -484,6 +492,7 @@ async function addNewPlayer(){
             $("#player-list").append(`<li>${playerName}</li>`);
         })
 
+        selectionOrder = [];
         $("#add-new-player-select").val(null).trigger('change');
 
         getPlayers()
@@ -1034,6 +1043,7 @@ function initPlayersSelect(players) {
             text: player.name
         }))
     })
+    selectionOrder = [];
 }
 
 $(document).ready(async function (){

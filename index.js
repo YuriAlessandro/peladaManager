@@ -522,16 +522,23 @@ async function updateCurrentMatch(teams) {
     $("#new-match-day-form").hide();
     
     $("#match-number").text(matches + 1);
-    $("#team-1-captain").text(`Time ${teams[0][0].name}`);
-    teams[0].forEach(player => {
-        $("#team-1-players").append(`<li>${player.name}</li>`);
-    });
+
+    if(teams[0]) {
+        const captain1 = teams[0].length > 0 ? teams[0][0].name : '';
+        $("#team-1-captain").text(`Time ${captain1}`);
+        teams[0].forEach(player => {
+            $("#team-1-players").append(`<li>${player.name}</li>`);
+        });
+    }
+
+    if (teams[1]) {
+        const captain2 = teams[1].length > 0 ? teams[1][0].name : '';
+        $("#team-2-captain").text(`Time ${captain2}`);
+        teams[1].forEach(player => {
+            $("#team-2-players").append(`<li>${player.name}</li>`);
+        });
+    }
     
-    
-    $("#team-2-captain").text(`Time ${teams[1][0].name}`);
-    teams[1].forEach(player => {
-        $("#team-2-players").append(`<li>${player.name}</li>`);
-    });
     
     $("#join-code").text(joinCode);
     $("#match").show();

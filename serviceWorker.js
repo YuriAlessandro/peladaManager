@@ -5,9 +5,9 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
       const deleted = caches.delete(CACHE_NAME);
       if(!deleted) {
-        alert('Cache não deletado');
+        console.log('Cache não deletado');
       } else {
-        alert('Cache deletado');
+        console.log('Cache deletado');
       }
     })());
 });

@@ -252,12 +252,12 @@
       integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
       crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-    <script type="module" src="./index.js?v=17"></script>
+    <script type="module" src="./script.js?v=17"></script>
     <script>
     const options = window.location.hostname.includes('localhost') || window.location.hostname.includes('ngrok-free.app')
         ? undefined : { scope: '/peladaManager/' };
     if('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./serviceWorker.js', options)
+        navigator.serviceWorker.register('./service-worker.js', options)
             .then(function(registration) {
                 console.log('Service Worker Registered');
             })

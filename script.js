@@ -19,6 +19,7 @@ let lastGameDayMatch = 0;
 let courtId = null;
 const localStorage = window.localStorage;
 let playersToNextGame = [];
+let selectionOrder = [];
 
 const createSpinner = (id) => {
     const wrapper = document.createElement('span');
@@ -89,7 +90,6 @@ socket.on('game-day:updated',  async () => {
             const filteredPlayers = p.filter(player => !players.some(p => p.name === player.name));
             initPlayersSelect(filteredPlayers.sort((a, b) => a.name.localeCompare(b.name)));
         })
-
 
     currentMatchMaxPoints = maxPoints;
     updatePlayerList();
@@ -434,9 +434,6 @@ $("#new-match-day").click(function() {
     $("#new-match-day-form").show();
     $("#new-match-day-button").hide();
 });
-
-let selectionOrder = [];
-
 
 $('#add-new-player-select').on('select2:select', function (e) {
     selectionOrder.push(e.params.data.text);

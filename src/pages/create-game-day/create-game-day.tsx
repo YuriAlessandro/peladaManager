@@ -40,6 +40,11 @@ const CreateGameDay = () => {
   };
   return (
     <CourtForm
+      initialValues={{
+        maxPoints: 11,
+        playersPerTeam: 4,
+        players: [],
+      }}
       submitButton={(isSubmitting) => (
         <Button className="tw-gap-2" disabled={isSubmitting} type="submit">
           {isSubmitting ? (

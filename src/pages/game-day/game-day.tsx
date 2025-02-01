@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { FaCopy, FaFlagCheckered, FaPlay, FaStopCircle } from "react-icons/fa";
+import { FaCopy, FaFlagCheckered, FaPlay, FaExpand } from "react-icons/fa";
 import { FaGear, FaRightLeft } from "react-icons/fa6";
 import { VscLoading } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router";
@@ -11,6 +11,7 @@ import { findBestTeamMatch, updateRatings } from "../../lib/elo";
 import { findNextMatchPlayers } from "../../lib/next-match";
 import { GameDayPlayer, PlayerRating } from "../../types";
 import TeamScoreBoard from "./team-scoreboard";
+import FullScreenScoreboard from "./full-screen-scoreboard";
 
 const GameDay = () => {
   const activeGameDay = useActiveGameDay();
@@ -20,6 +21,7 @@ const GameDay = () => {
   const [scoreA, setScoreA] = React.useState(0);
   const [scoreB, setScoreB] = React.useState(0);
   const [serveIndex, setServeIndex] = React.useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   const setRandomServeIndex = useCallback(() => {
     if (!activeGameDay.data) return;
@@ -132,6 +134,14 @@ const GameDay = () => {
       setScoreA(updatedScoreA);
       setScoreB(updatedScoreB);
       setServeIndex(index);
+
+      if(activeGameDay.data.autoSwitchTeamsPoints > 0) {
+        const totalPoints = updatedScoreA + updatedScoreB;
+        if(totalPoints % activeGameDay.data.autoSwitchTeamsPoints  === 0) {
+          await switchCurrentTeams(updatedScoreA, updatedScoreB)
+        }
+      }
+
       return;
     }
 
@@ -149,6 +159,8 @@ const GameDay = () => {
       return;
     }
 
+    // Existe full screen
+    if (isFullScreen) setIsFullScreen(false)
     await endMatch(winner, loser);
   };
 
@@ -222,117 +234,158 @@ const GameDay = () => {
     navigate(`/historico/${activeGameDay.data.id}?origin=game-day`)
   };
 
-  const endCourt = async () => {
-    const confirm = window.confirm("Deseja finalizar a quadra?");
-    if (!confirm) {
-      return;
-    }
+  // const endCourt = async () => {
+  //   const confirm = window.confirm("Deseja finalizar a quadra?");
+  //   if (!confirm) {
+  //     return;
+  //   }
 
+  //   if (!activeGameDay.data) return;
+  //   const ok = await api.leaveGameDay()
+  //   if(!ok) {
+  //     return alert('Quadra não pôde ser finalizada')
+  //   }
+
+  //   navigate('/')
+  // }
+
+  const switchCurrentTeams = async (newScoreA: number, newScoreB: number, showAlert=true) => {
     if (!activeGameDay.data) return;
-    const ok = await api.leaveGameDay()
-    if(!ok) {
-      return alert('Quadra não pôde ser finalizada')
-    }
+    await api.updateGameDay({
+      ...activeGameDay.data,
+      playingTeams: [activeGameDay.data.playingTeams[1], activeGameDay.data.playingTeams[0]],
+    });
+    await activeGameDay.mutate();
 
-    navigate('/')
+    setScoreA(newScoreB);
+    setScoreB(newScoreA);
+
+    if (showAlert) alert("Times invertidos!");
+  }
+
+  const switchFullScreen = (isFullScreen: boolean) => {
+    // Need to invert teams when put on full screen
+    setIsFullScreen(isFullScreen);
+    switchCurrentTeams(scoreB, scoreA, false);
   }
 
   return (
     <>
-      <div className="tw-flex tw-items-center tw-justify-between">
-        <h2 className="tw-text-stone-300">
-          Partida #{activeGameDay.data.matches + 1} /{" "}
-          <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span>
-        </h2>
-        <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
-          <FaCopy />#{activeGameDay.data.joinCode}
-        </Button>
-      </div>
-      <div className="tw-grid tw-grid-cols-3 tw-gap-5">
-        {activeGameDay.data.playingTeams.length === 0 && (
-          <>
-            <TeamScoreBoard
-              score={0}
-              index={0}
-              incrementScore={() => {}}
-              decrementScore={() => {}}
-              team={[]}
-            />
-            <Button
-              onClick={startNewMatch}
-              disabled={isStartingNewMatch}
-              className="tw-self-center tw-bg-rose-400 tw-gap-2 tw-text-base tw-font-medium"
-            >
-              {isStartingNewMatch ? <VscLoading className="tw-animate-spin" /> : <FaPlay />}
-              Iniciar próxima partida
-            </Button>
-            <TeamScoreBoard
-              score={0}
-              index={1}
-              incrementScore={() => {}}
-              decrementScore={() => {}}
-              team={[]}
-            />
-          </>
-        )}
-        {activeGameDay.data.playingTeams.length === 2 && (
-          <>
-            <TeamScoreBoard
-              score={scoreA}
-              serve={serveIndex === 0}
-              index={0}
-              team={activeGameDay.data.playingTeams[0]}
-              decrementScore={() => decrementScore(0)}
-              incrementScore={() => incrementScore(0)}
-            />
-            <div className="tw-flex tw-justify-center tw-text-3xl">
-              <p className="tw-text-center tw-font-bold">X</p>
+      {!isFullScreen && (
+        <>
+          <div className="tw-flex tw-items-center tw-justify-between">
+            <h2 className="tw-text-stone-300">
+              Partida #{activeGameDay.data.matches + 1} /{" "}
+              <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span>
+            </h2>
+            <div className="tw-flex tw-gap-2">
+              <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
+                <FaCopy />#{activeGameDay.data.joinCode}
+              </Button>
+              {!(activeGameDay.data.playingTeams.length === 0) && (
+                <Button className="tw-text-base tw-gap-2" onClick={() => switchFullScreen(true)}>
+                  <FaExpand />
+                </Button>
+              )}
             </div>
-            <TeamScoreBoard
-              score={scoreB}
-              serve={serveIndex === 1}
-              index={1}
-              team={activeGameDay.data.playingTeams[1]}
-              decrementScore={() => decrementScore(1)}
-              incrementScore={() => incrementScore(1)}
-            />
-          </>
-        )}
-      </div>
-      <div className="tw-flex tw-justify-between tw-gap-2">
-        <Link to="/pelada/editar">
-          <Button className="tw-bg-sky-300 tw-text-base">
-            <FaGear /> Configurar Quadra
-          </Button>
-        </Link>
-        <Button className="!tw-bg-amber-400 tw-text-base">
-          <FaRightLeft /> Inverter Times
-        </Button>
-      </div>
-      <PlayersTable showElo={showElo} gameDay={activeGameDay.data} />
-      <div className="tw-flex tw-gap-2">
-        <Button
-          className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
-          onClick={endMatchDay}
-        >
-          <FaFlagCheckered />
-          Finalizar Pelada
-        </Button>
-        <Button className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
-          onClick={endCourt}
-        >
-          <FaStopCircle />
-          Finalizar Quadra
-        </Button>
-        <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">
-          <input
-            type="checkbox"
-            id="show-elo"
-            onChange={() => setShowElo(!showElo)}
-          />
-          <label htmlFor="show-elo">v7. Modo Desenvolvedor</label>
-        </div>
-      </div>
+          </div>
+          <div className="tw-grid tw-grid-cols-3 tw-gap-5">
+            {activeGameDay.data.playingTeams.length === 0 && (
+              <>
+                <TeamScoreBoard
+                  score={0}
+                  index={0}
+                  incrementScore={() => {}}
+                  decrementScore={() => {}}
+                  team={[]}
+                />
+                <Button
+                  onClick={startNewMatch}
+                  disabled={isStartingNewMatch}
+                  className="tw-self-center tw-bg-rose-400 tw-gap-2 tw-text-base tw-font-medium"
+                >
+                  {isStartingNewMatch ? <VscLoading className="tw-animate-spin" /> : <FaPlay />}
+                  Iniciar próxima partida
+                </Button>
+                <TeamScoreBoard
+                  score={0}
+                  index={1}
+                  incrementScore={() => {}}
+                  decrementScore={() => {}}
+                  team={[]}
+                />
+              </>
+            )}
+            {activeGameDay.data.playingTeams.length === 2 && (
+              <>
+                <TeamScoreBoard
+                  score={scoreA}
+                  serve={serveIndex === 0}
+                  index={0}
+                  team={activeGameDay.data.playingTeams[0]}
+                  decrementScore={() => decrementScore(0)}
+                  incrementScore={() => incrementScore(0)}
+                />
+                <div className="tw-flex tw-justify-center tw-text-3xl">
+                  <p className="tw-text-center tw-font-bold">X</p>
+                </div>
+                <TeamScoreBoard
+                  score={scoreB}
+                  serve={serveIndex === 1}
+                  index={1}
+                  team={activeGameDay.data.playingTeams[1]}
+                  decrementScore={() => decrementScore(1)}
+                  incrementScore={() => incrementScore(1)}
+                />
+              </>
+            )}
+          </div>
+          <div className="tw-flex tw-justify-between tw-gap-2">
+            <Link to="/pelada/editar">
+              <Button className="tw-bg-sky-300 tw-text-base">
+                <FaGear /> Configurar Quadra
+              </Button>
+            </Link>
+            <Button onClick={() => switchCurrentTeams(scoreA, scoreB)} className="!tw-bg-amber-400 tw-text-base">
+              <FaRightLeft /> Inverter Times
+            </Button>
+          </div>
+          <PlayersTable showElo={showElo} gameDay={activeGameDay.data} />
+          <div className="tw-flex tw-gap-2">
+            <Button
+              className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
+              onClick={endMatchDay}
+            >
+              <FaFlagCheckered />
+              Finalizar Pelada
+            </Button>
+            {/* <Button className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"
+              onClick={endCourt}
+              disabled
+            >
+              <FaStopCircle />
+              Finalizar Quadra
+            </Button> */}
+            <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">
+              <input
+                type="checkbox"
+                id="show-elo"
+                onChange={() => setShowElo(!showElo)}
+              />
+              <label htmlFor="show-elo">v7. Modo Desenvolvedor</label>
+            </div>
+          </div>
+        </>
+      )}
+      {isFullScreen && (
+        <FullScreenScoreboard
+          setIsFullScreen={switchFullScreen}
+          teams={activeGameDay.data.playingTeams}
+          scoreA={scoreA}
+          scoreB={scoreB}
+          incrementScore={incrementScore}
+        />
+      )}
     </>
   );
 };

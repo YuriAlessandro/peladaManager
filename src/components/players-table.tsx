@@ -1,4 +1,5 @@
 import { GameDay } from "../types";
+import { sortPlayers } from "../utils";
 import PlayerLine from "./player-line";
 
 type Props = {
@@ -6,9 +7,16 @@ type Props = {
   showElo?: boolean;
   legend?: boolean;
   showPlaying?: boolean;
+  substitutePlayer: (playerName: string) => void;
 };
 
-const PlayersTable = ({ showElo = false, legend = true, showPlaying = true, gameDay }: Props) => {
+const PlayersTable = ({
+  showElo = false,
+  legend = true,
+  showPlaying = true,
+  gameDay,
+  substitutePlayer
+}: Props) => {
   return (
     <div className="tw-flex tw-flex-col tw-rounded-t-xl">
       <div className="tw-flex tw-justify-between tw-bg-slate-400 tw-p-5 tw-rounded-t-lg">
@@ -18,11 +26,14 @@ const PlayersTable = ({ showElo = false, legend = true, showPlaying = true, game
             <div className="tw-flex tw-items-center tw-font-semibold tw-p-1 tw-text-xs tw-bg-emerald-400">
               Na partida atual
             </div>
-            <div className="tw-flex tw-items-center tw-font-semibold tw-p-1 tw-text-xs tw-bg-amber-400">
+            {/* <div className="tw-flex tw-items-center tw-font-semibold tw-p-1 tw-text-xs tw-bg-amber-400">
               Em outra quadra
-            </div>
+            </div> */}
             <div className="tw-flex tw-items-center tw-font-semibold tw-p-1 tw-text-xs tw-bg-sky-400">
               Joga a próx.
+            </div>
+            <div className="tw-flex tw-items-center tw-font-semibold tw-p-1 tw-text-xs tw-bg-rose-400">
+              Fora do jogo
             </div>
           </div>
         )}
@@ -40,7 +51,7 @@ const PlayersTable = ({ showElo = false, legend = true, showPlaying = true, game
           </tr>
         </thead>
         <tbody>
-          {gameDay.players.map((player) => {
+          {gameDay.players.sort((a, b) => sortPlayers(a,b)).map((player) => {
             return (
               <PlayerLine
                 key={player.name}
@@ -49,6 +60,7 @@ const PlayersTable = ({ showElo = false, legend = true, showPlaying = true, game
                 legend={legend}
                 showElo={showElo}
                 showPlaying={showPlaying}
+                substitutePlayer={substitutePlayer}
               />
             );
           })}

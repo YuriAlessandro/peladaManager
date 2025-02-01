@@ -12,6 +12,7 @@ import { findNextMatchPlayers } from "../../lib/next-match";
 import { GameDayPlayer, PlayerRating } from "../../types";
 import TeamScoreBoard from "./team-scoreboard";
 import FullScreenScoreboard from "./full-screen-scoreboard";
+import { sortPlayers } from "../../utils";
 
 const GameDay = () => {
   const activeGameDay = useActiveGameDay();
@@ -234,20 +235,6 @@ const GameDay = () => {
     navigate(`/historico/${activeGameDay.data.id}?origin=game-day`)
   };
 
-  // const endCourt = async () => {
-  //   const confirm = window.confirm("Deseja finalizar a quadra?");
-  //   if (!confirm) {
-  //     return;
-  //   }
-
-  //   if (!activeGameDay.data) return;
-  //   const ok = await api.leaveGameDay()
-  //   if(!ok) {
-  //     return alert('Quadra não pôde ser finalizada')
-  //   }
-
-  //   navigate('/')
-  // }
 
   const switchCurrentTeams = async (newScoreA: number, newScoreB: number, showAlert=true) => {
     if (!activeGameDay.data) return;
@@ -267,6 +254,78 @@ const GameDay = () => {
     // Need to invert teams when put on full screen
     setIsFullScreen(isFullScreen);
     switchCurrentTeams(scoreB, scoreA, false);
+  }
+
+  const substitutePlayer = async (player: string) => {
+    const allPlaying = activeGameDay.data?.playingTeams.flat();
+    if (allPlaying?.some((p) => p.name === player)) {
+      const playerOrder =  activeGameDay?.data?.players.sort((a, b) => sortPlayers(a, b));
+
+      if (playerOrder) {
+        // Get all players that are not playing
+        const notOnCurrentMatchPlayers = playerOrder
+        .filter((player) => !allPlaying.some((p) => p.name === player.name) && player.playing);
+
+        // Get next player not playing on list
+        const nextPlayer = notOnCurrentMatchPlayers.find((p) => p.name !== player);
+        if (!nextPlayer) {
+          alert("Não há jogadores reservas para substituir.");
+          return;
+        }
+
+        const confirm = window.confirm(
+          `${player} está jogando, deseja substituí-lo? ${nextPlayer.name} será adicionado ao time.`
+        );
+
+        if (confirm) {
+          nextPlayer.playing = true;
+
+          // Find in witch team the player is playing
+          const teamIndex = activeGameDay?.data?.playingTeams.findIndex((team) =>
+            team.some((p) => p.name === player)
+          );
+
+          if (teamIndex === 0 || teamIndex === 1) {
+            const team = activeGameDay?.data?.playingTeams[teamIndex];
+            
+            // Remove player from team
+            const playerIndex = team?.findIndex((p) => p.name === player);
+            if (playerIndex) team?.splice(playerIndex, 1);
+            
+            // Add nextPlayer to team
+            team?.push(nextPlayer);
+            
+            if (activeGameDay?.data && activeGameDay.data.playingTeams && team) {
+              // Update playingTeams
+              const playingTeams = activeGameDay.data.playingTeams;
+              playingTeams[teamIndex] = team;
+
+              await api.updateGameDay({
+                ...activeGameDay.data,
+                playingTeams: playingTeams,
+              });
+            }
+            
+            alert(`${player} foi substituído por ${nextPlayer.name}`);
+          }
+        } else return;
+      }
+    }
+
+    if (activeGameDay?.data?.players) {
+      const playerIndex = activeGameDay.data.players.findIndex((p) => p.name === player);
+      const players = activeGameDay.data.players;
+      players[playerIndex].playing = !players[playerIndex].playing;
+      
+      const playersToNextGame = activeGameDay.data.playersToNextGame;
+  
+      await api.updateGameDay({
+        ...activeGameDay.data,
+        players: players,
+        playersToNextGame: playersToNextGame.filter(nextGamePlayer => nextGamePlayer.name !== player),
+      });
+    }
+    await activeGameDay.mutate();
   }
 
   return (
@@ -350,7 +409,11 @@ const GameDay = () => {
               <FaRightLeft /> Inverter Times
             </Button>
           </div>
-          <PlayersTable showElo={showElo} gameDay={activeGameDay.data} />
+          <PlayersTable
+            showElo={showElo}
+            gameDay={activeGameDay.data}
+            substitutePlayer={substitutePlayer}
+          />
           <div className="tw-flex tw-gap-2">
             <Button
               className="tw-flex-1 tw-bg-rose-400 tw-text-base tw-font-semibold"

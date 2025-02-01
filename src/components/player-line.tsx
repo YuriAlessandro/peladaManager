@@ -1,3 +1,4 @@
+import { CgPlayPauseR } from "react-icons/cg";
 import { GameDay, GameDayPlayer, PlayerRating } from "../types";
 
 type Props = {
@@ -6,15 +7,17 @@ type Props = {
   showElo: boolean;
   showPlaying: boolean;
   legend?: boolean;
+  substitutePlayer: (playerName: string) => void;
 };
 
-const PlayerLine = ({ gameDay, player, showElo, showPlaying, legend = true }: Props) => {
+const PlayerLine = ({ gameDay, player, showElo, showPlaying, legend = true, substitutePlayer }: Props) => {
   const isPlayingHere = gameDay.playingTeams
     ?.flat()
     .some((p) => p.name === player.name);
   const isPlayingSomewhereElse = gameDay.otherPlayingTeams
     ?.flat()
     .some((p) => p.name === player.name);
+  const isOutOfGame = !player.playing
   const shouldBeOnNextMatch = gameDay.playersToNextGame?.some(
     (p) => p.name === player.name
   );
@@ -26,6 +29,8 @@ const PlayerLine = ({ gameDay, player, showElo, showPlaying, legend = true }: Pr
     ? "tw-bg-amber-400 tw-text-stone-800"
     : shouldBeOnNextMatch
     ? "tw-bg-sky-400 tw-text-stone-800"
+    : isOutOfGame
+    ? "tw-bg-rose-400 tw-text-stone-800"
     : "tw-text-white";
   return (
     <tr className={`tw-border tw-border-gray-600  ${rowClasses}`}>
@@ -40,7 +45,7 @@ const PlayerLine = ({ gameDay, player, showElo, showPlaying, legend = true }: Pr
         </td>
       )}
       {showPlaying && (
-        <td className="tw-p-2">{player.playing ? "Sim" : "Não"}</td>
+        <td className="tw-p-2 tw-cursor-pointer" onClick={() => substitutePlayer(player.name)}>{player.playing ? "Sim" : "Não"}</td>
       )}
     </tr>
   );

@@ -1,17 +1,5 @@
 import { GameDay, GameDayPlayer } from "../types";
-
-function sortPlayers(a: GameDayPlayer, b: GameDayPlayer) {
-  if (a.lastPlayedMatch === b.lastPlayedMatch) {
-    if (a.matches < b.matches) return -1;
-    if (a.matches > b.matches) return 1;
-    return 0;
-  }
-
-  if (a.lastPlayedMatch < b.lastPlayedMatch) return -1;
-  if (a.lastPlayedMatch > b.lastPlayedMatch) return 1;
-
-  return 0;
-}
+import { sortPlayers } from "../utils";
 
 function findPlayerByName(players: GameDayPlayer[], name: string) {
   return players.find((player) => player.name === name);

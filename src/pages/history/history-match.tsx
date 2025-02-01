@@ -36,6 +36,7 @@ const HistoryMatch = () => {
         gameDay={gameDay}
         legend={false}
         showPlaying={false}
+        substitutePlayer={() => {}}
       />
     </>
   )

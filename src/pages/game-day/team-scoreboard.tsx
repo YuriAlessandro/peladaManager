@@ -41,15 +41,15 @@ const TeamScoreBoard = ({
         className={`score-container tw-rounded-lg tw-bg-opacity-50 ${colors[index].container}`}
       >
         <div
-          className={`${colors[index].serve} tw-p-3 tw-rounded-t-lg tw-h-11`}
+          className={`${colors[index].serve} tw-p-3 tw-rounded-t-lg sm:tw-h-11`}
         >
           {serve && <FaPlay className="tw-text-white tw-text-lg" />}
         </div>
         <h3
           style={{
             textShadow: " 0 0 10px rgba(255, 255, 255, 0.3)",
-          }}
-          className="tw-text-9xl tw-p-10 tw-font-digital
+          }} 
+          className="tw-text-9xl sm:tw-text-9xl tw-p-5 sm:tw-p-10 tw-font-digital
             tw-flex tw-items-center
           "
         >

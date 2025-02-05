@@ -328,11 +328,26 @@ const GameDay = () => {
     await activeGameDay.mutate();
   }
 
+  const nextMatchButton = () => (
+    <Button
+      onClick={startNewMatch}
+      disabled={isStartingNewMatch}
+      className="tw-bg-rose-400 tw-gap-2 tw-text-base tw-font-medium"
+    >
+      {isStartingNewMatch ? (
+        <VscLoading className="tw-animate-spin" />
+      ) : (
+        <FaPlay />
+      )}
+      Iniciar próxima partida
+    </Button>
+  );
+
   return (
     <>
       {!isFullScreen && (
         <>
-          <div className="tw-flex tw-items-center tw-justify-between">
+          <div className="tw-flex tw-flex-col md:tw-flex-row tw-gap-2 tw-items-center tw-justify-between">
             <h2 className="tw-text-stone-300">
               Partida #{activeGameDay.data.matches + 1} /{" "}
               <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span>
@@ -342,13 +357,16 @@ const GameDay = () => {
                 <FaCopy />#{activeGameDay.data.joinCode}
               </Button>
               {!(activeGameDay.data.playingTeams.length === 0) && (
-                <Button className="tw-text-base tw-gap-2" onClick={() => switchFullScreen(true)}>
+                <Button
+                  className="tw-text-base tw-gap-2"
+                  onClick={() => switchFullScreen(true)}
+                >
                   <FaExpand />
                 </Button>
               )}
             </div>
           </div>
-          <div className="tw-grid tw-grid-cols-3 tw-gap-5">
+          <div className="tw-grid tw-grid-cols-2 tw-gap-5">
             {activeGameDay.data.playingTeams.length === 0 && (
               <>
                 <TeamScoreBoard
@@ -358,14 +376,6 @@ const GameDay = () => {
                   decrementScore={() => {}}
                   team={[]}
                 />
-                <Button
-                  onClick={startNewMatch}
-                  disabled={isStartingNewMatch}
-                  className="tw-self-center tw-bg-rose-400 tw-gap-2 tw-text-base tw-font-medium"
-                >
-                  {isStartingNewMatch ? <VscLoading className="tw-animate-spin" /> : <FaPlay />}
-                  Iniciar próxima partida
-                </Button>
                 <TeamScoreBoard
                   score={0}
                   index={1}
@@ -399,13 +409,17 @@ const GameDay = () => {
               </>
             )}
           </div>
-          <div className="tw-flex tw-justify-between tw-gap-2">
-            <Link to="/pelada/editar">
-              <Button className="tw-bg-sky-300 tw-text-base">
+          <div className="tw-flex tw-flex-col tw-gap-2">
+            {activeGameDay.data.playingTeams.length === 0 && nextMatchButton()}
+            <Link to="/pelada/editar" className=" tw-self-stretch tw-flex">
+              <Button className="tw-bg-sky-300 tw-text-base tw-flex-1">
                 <FaGear /> Configurar Quadra
               </Button>
             </Link>
-            <Button onClick={() => switchCurrentTeams(scoreA, scoreB)} className="!tw-bg-amber-400 tw-text-base">
+            <Button
+              onClick={() => switchCurrentTeams(scoreA, scoreB)}
+              className="!tw-bg-amber-400 tw-text-base tw-self-stretch"
+            >
               <FaRightLeft /> Inverter Times
             </Button>
           </div>

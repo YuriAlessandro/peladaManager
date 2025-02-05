@@ -1,4 +1,3 @@
-import { CgPlayPauseR } from "react-icons/cg";
 import { GameDay, GameDayPlayer, PlayerRating } from "../types";
 
 type Props = {
@@ -34,18 +33,18 @@ const PlayerLine = ({ gameDay, player, showElo, showPlaying, legend = true, subs
     : "tw-text-white";
   return (
     <tr className={`tw-border tw-border-gray-600  ${rowClasses}`}>
-      <td className="tw-p-2">{player.name}</td>
-      <td className="tw-p-2">{player.matches}</td>
-      <td className="tw-p-2">{player.victories}</td>
-      <td className="tw-p-2">{player.defeats}</td>
-      <td className="tw-p-2">{player.lastPlayedMatch}</td>
+      <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">{player.name}</td>
+      <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">{player.matches}</td>
+      <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">{player.victories}</td>
+      <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">{player.defeats}</td>
+      <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">{player.lastPlayedMatch}</td>
       {showElo && (
-        <td className="tw-p-2">
+        <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden">
           {player.mu.toFixed(2)}/{player.sigma.toFixed(2)}
         </td>
       )}
       {showPlaying && (
-        <td className="tw-p-2 tw-cursor-pointer" onClick={() => substitutePlayer(player.name)}>{player.playing ? "Sim" : "Não"}</td>
+        <td className="tw-p-2 tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden tw-cursor-pointer" onClick={() => substitutePlayer(player.name)}>{player.playing ? "Sim" : "Não"}</td>
       )}
     </tr>
   );

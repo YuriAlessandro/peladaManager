@@ -409,7 +409,7 @@ const GameDay = () => {
               </>
             )}
           </div>
-          <div className="tw-flex tw-flex-col tw-gap-2">
+          <div className="tw-flex tw-flex-col md:tw-flex-row tw-justify-center tw-gap-2">
             {activeGameDay.data.playingTeams.length === 0 && nextMatchButton()}
             <Link to="/pelada/editar" className=" tw-self-stretch tw-flex">
               <Button className="tw-bg-sky-300 tw-text-base tw-flex-1">

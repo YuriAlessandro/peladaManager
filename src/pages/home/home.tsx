@@ -35,7 +35,7 @@ const Home = () => {
   const matchDayCodeField = form.register("matchDayCode");
 
   return (
-    <div className="tw-flex-1 tw-flex tw-flex-col tw-gap-5 tw-justify-center tw-max-w-screen-sm tw-mx-auto">
+    <div className="tw-flex-1 tw-flex tw-flex-col tw-gap-5 tw-justify-center tw-self-center">
       <div className="tw-flex tw-flex-col tw-gap-2">
         <Link to="/criar-pelada" className={`${buttonClasses} tw-flex-1`}>
           <FaPlus />
@@ -43,13 +43,14 @@ const Home = () => {
         </Link>
       </div>
       <form
-        className="tw-flex tw-gap-5 tw-items-end"
+        className="tw-flex tw-gap-5 tw-flex-wrap tw-items-end"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="tw-flex tw-flex-col">
           <label htmlFor="match-day-code">Código de pelada existente:</label>
           <Input
             id="match-day-code"
+            className="tw-px-0"
             {...matchDayCodeField}
             onChange={(e) => {
               e.target.value = e.target.value.toUpperCase();

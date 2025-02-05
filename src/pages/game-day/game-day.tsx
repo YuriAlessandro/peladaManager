@@ -5,7 +5,7 @@ import { VscLoading } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router";
 import { api } from "../../api";
 import Button from "../../components/button";
-import PlayersTable from "../../components/players-table";  
+import PlayersTable from "../../components/players-table";
 import { useActiveGameDay } from "../../hooks/use-active-game-day";
 import { findBestTeamMatch, updateRatings } from "../../lib/elo";
 import { findNextMatchPlayers } from "../../lib/next-match";
@@ -136,10 +136,10 @@ const GameDay = () => {
       setScoreB(updatedScoreB);
       setServeIndex(index);
 
-      if(activeGameDay.data.autoSwitchTeamsPoints > 0) {
+      if (activeGameDay.data.autoSwitchTeamsPoints > 0) {
         const totalPoints = updatedScoreA + updatedScoreB;
-        if(totalPoints % activeGameDay.data.autoSwitchTeamsPoints  === 0) {
-          await switchCurrentTeams(updatedScoreA, updatedScoreB)
+        if (totalPoints % activeGameDay.data.autoSwitchTeamsPoints === 0) {
+          await switchCurrentTeams(updatedScoreA, updatedScoreB);
         }
       }
 
@@ -161,7 +161,7 @@ const GameDay = () => {
     }
 
     // Existe full screen
-    if (isFullScreen) setIsFullScreen(false)
+    if (isFullScreen) setIsFullScreen(false);
     await endMatch(winner, loser);
   };
 
@@ -228,19 +228,25 @@ const GameDay = () => {
       isLive: false,
     });
 
-    if(!ok) {
-      return alert('Pelada não pode ser finalizada')
+    if (!ok) {
+      return alert("Pelada não pode ser finalizada");
     }
 
-    navigate(`/historico/${activeGameDay.data.id}?origin=game-day`)
+    navigate(`/historico/${activeGameDay.data.id}?origin=game-day`);
   };
 
-
-  const switchCurrentTeams = async (newScoreA: number, newScoreB: number, showAlert=true) => {
+  const switchCurrentTeams = async (
+    newScoreA: number,
+    newScoreB: number,
+    showAlert = true
+  ) => {
     if (!activeGameDay.data) return;
     await api.updateGameDay({
       ...activeGameDay.data,
-      playingTeams: [activeGameDay.data.playingTeams[1], activeGameDay.data.playingTeams[0]],
+      playingTeams: [
+        activeGameDay.data.playingTeams[1],
+        activeGameDay.data.playingTeams[0],
+      ],
     });
     await activeGameDay.mutate();
 
@@ -248,26 +254,32 @@ const GameDay = () => {
     setScoreB(newScoreA);
 
     if (showAlert) alert("Times invertidos!");
-  }
+  };
 
   const switchFullScreen = (isFullScreen: boolean) => {
     // Need to invert teams when put on full screen
     setIsFullScreen(isFullScreen);
     switchCurrentTeams(scoreB, scoreA, false);
-  }
+  };
 
   const substitutePlayer = async (player: string) => {
     const allPlaying = activeGameDay.data?.playingTeams.flat();
     if (allPlaying?.some((p) => p.name === player)) {
-      const playerOrder =  activeGameDay?.data?.players.sort((a, b) => sortPlayers(a, b));
+      const playerOrder = activeGameDay?.data?.players.sort((a, b) =>
+        sortPlayers(a, b)
+      );
 
       if (playerOrder) {
         // Get all players that are not playing
-        const notOnCurrentMatchPlayers = playerOrder
-        .filter((player) => !allPlaying.some((p) => p.name === player.name) && player.playing);
+        const notOnCurrentMatchPlayers = playerOrder.filter(
+          (player) =>
+            !allPlaying.some((p) => p.name === player.name) && player.playing
+        );
 
         // Get next player not playing on list
-        const nextPlayer = notOnCurrentMatchPlayers.find((p) => p.name !== player);
+        const nextPlayer = notOnCurrentMatchPlayers.find(
+          (p) => p.name !== player
+        );
         if (!nextPlayer) {
           alert("Não há jogadores reservas para substituir.");
           return;
@@ -281,21 +293,25 @@ const GameDay = () => {
           nextPlayer.playing = true;
 
           // Find in witch team the player is playing
-          const teamIndex = activeGameDay?.data?.playingTeams.findIndex((team) =>
-            team.some((p) => p.name === player)
+          const teamIndex = activeGameDay?.data?.playingTeams.findIndex(
+            (team) => team.some((p) => p.name === player)
           );
 
           if (teamIndex === 0 || teamIndex === 1) {
             const team = activeGameDay?.data?.playingTeams[teamIndex];
-            
+
             // Remove player from team
             const playerIndex = team?.findIndex((p) => p.name === player);
             if (playerIndex) team?.splice(playerIndex, 1);
-            
+
             // Add nextPlayer to team
             team?.push(nextPlayer);
-            
-            if (activeGameDay?.data && activeGameDay.data.playingTeams && team) {
+
+            if (
+              activeGameDay?.data &&
+              activeGameDay.data.playingTeams &&
+              team
+            ) {
               // Update playingTeams
               const playingTeams = activeGameDay.data.playingTeams;
               playingTeams[teamIndex] = team;
@@ -305,7 +321,7 @@ const GameDay = () => {
                 playingTeams: playingTeams,
               });
             }
-            
+
             alert(`${player} foi substituído por ${nextPlayer.name}`);
           }
         } else return;
@@ -313,20 +329,24 @@ const GameDay = () => {
     }
 
     if (activeGameDay?.data?.players) {
-      const playerIndex = activeGameDay.data.players.findIndex((p) => p.name === player);
+      const playerIndex = activeGameDay.data.players.findIndex(
+        (p) => p.name === player
+      );
       const players = activeGameDay.data.players;
       players[playerIndex].playing = !players[playerIndex].playing;
-      
+
       const playersToNextGame = activeGameDay.data.playersToNextGame;
-  
+
       await api.updateGameDay({
         ...activeGameDay.data,
         players: players,
-        playersToNextGame: playersToNextGame.filter(nextGamePlayer => nextGamePlayer.name !== player),
+        playersToNextGame: playersToNextGame.filter(
+          (nextGamePlayer) => nextGamePlayer.name !== player
+        ),
       });
     }
     await activeGameDay.mutate();
-  }
+  };
 
   const nextMatchButton = () => (
     <Button
@@ -366,49 +386,47 @@ const GameDay = () => {
               )}
             </div>
           </div>
-          <div className="tw-grid tw-grid-cols-2 tw-gap-5">
-            {activeGameDay.data.playingTeams.length === 0 && (
-              <>
-                <TeamScoreBoard
-                  score={0}
-                  index={0}
-                  incrementScore={() => {}}
-                  decrementScore={() => {}}
-                  team={[]}
-                />
-                <TeamScoreBoard
-                  score={0}
-                  index={1}
-                  incrementScore={() => {}}
-                  decrementScore={() => {}}
-                  team={[]}
-                />
-              </>
-            )}
-            {activeGameDay.data.playingTeams.length === 2 && (
-              <>
-                <TeamScoreBoard
-                  score={scoreA}
-                  serve={serveIndex === 0}
-                  index={0}
-                  team={activeGameDay.data.playingTeams[0]}
-                  decrementScore={() => decrementScore(0)}
-                  incrementScore={() => incrementScore(0)}
-                />
-                <div className="tw-flex tw-justify-center tw-text-3xl">
-                  <p className="tw-text-center tw-font-bold">X</p>
-                </div>
-                <TeamScoreBoard
-                  score={scoreB}
-                  serve={serveIndex === 1}
-                  index={1}
-                  team={activeGameDay.data.playingTeams[1]}
-                  decrementScore={() => decrementScore(1)}
-                  incrementScore={() => incrementScore(1)}
-                />
-              </>
-            )}
-          </div>
+          {activeGameDay.data.playingTeams.length === 0 && (
+            <div className="tw-grid tw-grid-cols-2 tw-gap-5">
+              <TeamScoreBoard
+                score={0}
+                index={0}
+                incrementScore={() => {}}
+                decrementScore={() => {}}
+                team={[]}
+              />
+              <TeamScoreBoard
+                score={0}
+                index={1}
+                incrementScore={() => {}}
+                decrementScore={() => {}}
+                team={[]}
+              />
+            </div>
+          )}
+          {activeGameDay.data.playingTeams.length === 2 && (
+            <div className="tw-grid tw-grid-cols-2 tw-gap-2  sm:tw-grid-cols-3 sm:tw-gap-5">
+              <TeamScoreBoard
+                score={scoreA}
+                serve={serveIndex === 0}
+                index={0}
+                team={activeGameDay.data.playingTeams[0]}
+                decrementScore={() => decrementScore(0)}
+                incrementScore={() => incrementScore(0)}
+              />
+              <div className="tw-justify-center tw-text-3xl tw-items-center tw-hidden sm:tw-flex">
+                <p className="tw-text-center tw-font-bold">X</p>
+              </div>
+              <TeamScoreBoard
+                score={scoreB}
+                serve={serveIndex === 1}
+                index={1}
+                team={activeGameDay.data.playingTeams[1]}
+                decrementScore={() => decrementScore(1)}
+                incrementScore={() => incrementScore(1)}
+              />
+            </div>
+          )}
           <div className="tw-flex tw-flex-col md:tw-flex-row tw-justify-center tw-gap-2">
             {activeGameDay.data.playingTeams.length === 0 && nextMatchButton()}
             <Link to="/pelada/editar" className=" tw-self-stretch tw-flex">

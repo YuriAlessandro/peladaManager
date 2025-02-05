@@ -132,7 +132,7 @@ const CourtForm = ({ onSubmit, submitButton, initialValues }: Props) => {
   return (
     <form className="tw-flex tw-flex-col tw-gap-5" onSubmit={handleSubmit}>
       <BackButton />
-      <div className="tw-flex tw-gap-2">
+      <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-2">
         <div className="tw-flex-1 tw-flex tw-flex-col">
           <label htmlFor="playersPerTeam">Jogadores por time:</label>
           <Input
@@ -156,7 +156,7 @@ const CourtForm = ({ onSubmit, submitButton, initialValues }: Props) => {
           )}
         </div>
       </div>
-      <div className="tw-flex tw-gap-2">
+      <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-2">
         <div className="tw-flex-1 tw-flex tw-items-center tw-gap-2">
           <Input
             id="autoSwitchTeams"

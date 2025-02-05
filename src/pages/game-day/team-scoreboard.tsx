@@ -28,7 +28,9 @@ const TeamScoreBoard = ({
 }: Props) => {
   return (
     <div className="tw-flex tw-flex-col tw-items-center tw-gap-3">
-      <h2 className="tw-text-3xl tw-font-bold">Time {team[0]?.name ?? index + 1}</h2>
+      <h2 className="tw-text-3xl tw-font-bold tw-whitespace-nowrap tw-text-ellipsis tw-overflow-hidden tw-max-w-full">
+        Time {team[0]?.name ?? index + 1}
+      </h2>
       <Button
         className="tw-bg-rose-400 tw-px-6"
         onClick={() => decrementScore()}
@@ -41,9 +43,9 @@ const TeamScoreBoard = ({
         className={`score-container tw-rounded-lg tw-bg-opacity-50 ${colors[index].container}`}
       >
         <div
-          className={`${colors[index].serve} tw-p-3 tw-rounded-t-lg sm:tw-h-11`}
+          className={`${colors[index].serve} tw-p-3 tw-rounded-t-lg tw-h-10 sm:tw-h-11`}
         >
-          {serve && <FaPlay className="tw-text-white tw-text-lg" />}
+          {serve && <FaPlay className="tw-text-white sm:tw-text-lg" />}
         </div>
         <h3
           style={{
@@ -56,9 +58,11 @@ const TeamScoreBoard = ({
           {score.toString().padStart(2, "0")}
         </h3>
       </button>
-      <ul>
+      <ul className="tw-max-h-20 tw-overflow-y-auto tw-px-3 tw-max-w-full" id="team-players-list">
         {team.map((player, index) => {
-          return <li key={index}>{player.name}</li>;
+          return <li 
+            className="tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis tw-max-w-full"
+          key={index}>{player.name}</li>;
         })}
       </ul>
     </div>

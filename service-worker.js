@@ -1,4 +1,4 @@
-const CACHE_NAME = `volley_score_cache_v6`;
+const CACHE_NAME = `volley_score_cache_v7`;
 
 self.addEventListener('install', (event) => {
   console.log('Service Worker instalado');

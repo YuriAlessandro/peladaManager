@@ -1,4 +1,3 @@
-import React from 'react'
 import { useGameDays } from '../../hooks/use-game-days'
 import { VscLoading } from 'react-icons/vsc';
 import { useParams, useSearchParams } from 'react-router';

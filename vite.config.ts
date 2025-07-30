@@ -6,5 +6,6 @@ export default defineConfig({
   build: {
     outDir: 'build',
   },
+  base: "/peladaManager",
   plugins: [react()],
 })

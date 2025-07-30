@@ -20,12 +20,24 @@ const FullScreenScoreboard = ({
 }: Props) => {
     return (
         <div className="tw-flex tw-h-[90vh]">
-          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-sky-300 tw-justify-center tw-items-center" onClick={() => incrementScore(1)}>
-            <h1 className="tw-text-[13rem]">{scoreB}</h1>
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-sky-800 tw-justify-center tw-items-center" onClick={() => incrementScore(1)}>
+            <h1 
+              className="tw-text-[13rem] tw-font-digital"
+              style={{
+                textShadow: " 0 0 10px rgba(255, 255, 255, 0.3)",
+              }}
+            >
+              {scoreB.toString().padStart(2, "0")}
+            </h1>
             <span>Time {teams[0][0]?.name}</span>
           </div>
-          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-rose-400 tw-justify-center tw-items-center" onClick={() => incrementScore(0)}>
-            <h1 className="tw-text-[13rem]">{scoreA}</h1>
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-rose-800 tw-justify-center tw-items-center" onClick={() => incrementScore(0)}>
+            <h1
+              className="tw-text-[13rem] tw-font-digital"
+              style={{
+                textShadow: " 0 0 10px rgba(255, 255, 255, 0.3)",
+              }}
+            >{scoreA.toString().padStart(2, "0")}</h1>
             <span>Time {teams[1][0]?.name}</span>
           </div>
           <div className="tw-flex tw-absolute tw-top-0 tw-right-0 tw-p-4">

@@ -2,7 +2,7 @@
   "name": "pelada-manager-react",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://yurialessandro.github.io/",
+  "homepage": "https://yurialessandro.github.io/peladaManager/",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

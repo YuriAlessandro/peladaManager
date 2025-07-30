@@ -58,7 +58,7 @@ const TeamScoreBoard = ({
           {score.toString().padStart(2, "0")}
         </h3>
       </button>
-      <ul className="tw-max-h-20 tw-overflow-y-auto tw-px-3 tw-max-w-full" id="team-players-list">
+      <ul className="tw-max-h-22 tw-overflow-y-auto tw-px-3 tw-max-w-full" id="team-players-list">
         {team.map((player, index) => {
           return <li 
             className="tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis tw-max-w-full"

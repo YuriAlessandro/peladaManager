@@ -19,41 +19,21 @@ const FullScreenScoreboard = ({
   incrementScore,
 }: Props) => {
     return (
-        <>
-          <div className="tw-flex tw-items-end tw-justify-end">
+        <div className="tw-flex tw-h-[90vh]">
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-sky-300 tw-justify-center tw-items-center" onClick={() => incrementScore(1)}>
+            <h1 className="tw-text-[13rem]">{scoreB}</h1>
+            <span>Time {teams[0][0]?.name}</span>
+          </div>
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-rose-400 tw-justify-center tw-items-center" onClick={() => incrementScore(0)}>
+            <h1 className="tw-text-[13rem]">{scoreA}</h1>
+            <span>Time {teams[1][0]?.name}</span>
+          </div>
+          <div className="tw-flex tw-absolute tw-top-0 tw-right-0 tw-p-4">
             <Button className="tw-text-base tw-gap-2" onClick={() => setIsFullScreen(false)}>
               <FaExpand />
             </Button>
           </div>
-          <div className="tw-flex tw-justify-center tw-flex-row tw-h-[90vh]">
-            <div className="tw-flex tw-justify-center tw-bg-sky-300 tw-bg-rose-400 tw-w-[49vw] tw-h-full" onClick={() => incrementScore(0)}>
-              <div className="tw-flex tw-justify-center tw-items-center tw-flex-col tw-h-full tw-gap-10">
-                <h3 className="tw-text-xl">Time {teams[0][0]?.name}</h3>
-                <h1 className="tw-text-[500px]">{scoreA}</h1>
-                <ul className="tw-list-disc">
-                  {teams[0].map((player) => (
-                    <li key={player.name}>
-                      {player.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="tw-flex tw-justify-center tw-bg-rose-400 tw-w-[49vw]" onClick={() => incrementScore(1)}>
-              <div className="tw-flex tw-justify-center tw-items-center tw-flex-col tw-h-full tw-gap-10">
-                <h3 className="tw-text-xl">Time {teams[1][0]?.name}</h3>
-                <h1 className="tw-text-[500px]">{scoreB}</h1>
-                <ul className="tw-list-disc">
-                  {teams[1].map((player) => (
-                    <li key={player.name}>
-                      {player.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
     )
 }
 

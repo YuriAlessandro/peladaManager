@@ -369,13 +369,13 @@ const GameDay = () => {
         <>
           <div className="tw-flex tw-flex-col md:tw-flex-row tw-gap-2 tw-items-center tw-justify-between">
             <h2 className="tw-text-stone-300">
-              Partida #{activeGameDay.data.matches + 1} /{" "}
-              <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span>
+              Partida #{activeGameDay.data.matches + 1}
+              {/* <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span> */}
             </h2>
             <div className="tw-flex tw-gap-2">
-              <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
+              {/* <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
                 <FaCopy />#{activeGameDay.data.joinCode}
-              </Button>
+              </Button> */}
               {!(activeGameDay.data.playingTeams.length === 0) && (
                 <Button
                   className="tw-text-base tw-gap-2"
@@ -461,14 +461,14 @@ const GameDay = () => {
               <FaStopCircle />
               Finalizar Quadra
             </Button> */}
-            <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">
+            {/* <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">
               <input
                 type="checkbox"
                 id="show-elo"
                 onChange={() => setShowElo(!showElo)}
               />
-              <label htmlFor="show-elo">v7. Modo Desenvolvedor</label>
-            </div>
+              <label htmlFor="show-elo">v8. Modo Desenvolvedor</label>
+            </div> */}
           </div>
         </>
       )}

@@ -1,38 +1,38 @@
-import { Link, useNavigate } from "react-router";
-import Button, { buttonClasses } from "../../components/button";
-import Input from "../../components/input";
+import { Link } from "react-router";
+import { buttonClasses } from "../../components/button";
+// import Input from "../../components/input";
 import { FaClock, FaPlus } from "react-icons/fa";
-import { FaRightToBracket } from "react-icons/fa6";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { api } from "../../api";
-import { useState } from "react";
-import { VscLoading } from "react-icons/vsc";
+// import { FaRightToBracket } from "react-icons/fa6";
+// import { z } from "zod";
+// import { useForm } from "react-hook-form";
+// import { zodResolver } from "@hookform/resolvers/zod";
+// import { api } from "../../api";
+// import { useState } from "react";
+// import { VscLoading } from "react-icons/vsc";
 
-const schema = z.object({
-  matchDayCode: z.string().min(4),
-});
+// const schema = z.object({
+//   matchDayCode: z.string().min(4),
+// });
 
-type FormData = z.infer<typeof schema>;
+// type FormData = z.infer<typeof schema>;
 
 const Home = () => {
-  const form = useForm<FormData>({ resolver: zodResolver(schema) });
-  const navigate = useNavigate();
-  const [isJoining, setIsJoining] = useState(false);
+  // const form = useForm<FormData>({ resolver: zodResolver(schema) });
+  // const navigate = useNavigate();
+  // const [isJoining, setIsJoining] = useState(false);
 
-  const onSubmit = async (data: { matchDayCode: string }) => {
-    try {
-      setIsJoining(true);
-      const gameDay = await api.joinGameDay(data.matchDayCode);
-      if (!gameDay) return alert("Não foi possível entrar na partida");
-      navigate("/pelada");
-    } finally {
-      setIsJoining(false);
-    }
-  };
+  // const onSubmit = async (data: { matchDayCode: string }) => {
+  //   try {
+  //     setIsJoining(true);
+  //     const gameDay = await api.joinGameDay(data.matchDayCode);
+  //     if (!gameDay) return alert("Não foi possível entrar na partida");
+  //     navigate("/pelada");
+  //   } finally {
+  //     setIsJoining(false);
+  //   }
+  // };
 
-  const matchDayCodeField = form.register("matchDayCode");
+  // const matchDayCodeField = form.register("matchDayCode");
 
   return (
     <div className="tw-flex-1 tw-flex tw-flex-col tw-gap-5 tw-justify-center tw-self-center">
@@ -42,7 +42,7 @@ const Home = () => {
           Criar nova pelada
         </Link>
       </div>
-      <form
+      {/* <form
         className="tw-flex tw-gap-5 tw-flex-wrap tw-items-end"
         onSubmit={form.handleSubmit(onSubmit)}
       >
@@ -72,7 +72,7 @@ const Home = () => {
       </form>
       {form.formState.errors.matchDayCode && (
         <p className="tw-text-red-500 tw-text-sm">Código inválido</p>
-      )}
+      )} */}
       <Link to="/historico" className={`${buttonClasses} tw-bg-gray-100`}>
         <FaClock />
         Histórico

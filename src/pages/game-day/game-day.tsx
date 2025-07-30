@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { FaCopy, FaFlagCheckered, FaPlay, FaExpand } from "react-icons/fa";
+import { FaFlagCheckered, FaPlay, FaExpand } from "react-icons/fa";
 import { FaGear, FaRightLeft } from "react-icons/fa6";
 import { VscLoading } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router";
@@ -16,7 +16,7 @@ import { sortPlayers } from "../../utils";
 
 const GameDay = () => {
   const activeGameDay = useActiveGameDay();
-  const [showElo, setShowElo] = React.useState(false);
+  // const [showElo, setShowElo] = React.useState(false);
   const [isStartingNewMatch, setIsStartingNewMatch] = React.useState(false);
   const navigate = useNavigate();
   const [scoreA, setScoreA] = React.useState(0);
@@ -55,11 +55,11 @@ const GameDay = () => {
     );
   }
 
-  const copyCode = () => {
-    if (!activeGameDay.data) return;
-    navigator.clipboard.writeText(activeGameDay.data.joinCode);
-    alert("Código copiado!");
-  };
+  // const copyCode = () => {
+  //   if (!activeGameDay.data) return;
+  //   navigator.clipboard.writeText(activeGameDay.data.joinCode);
+  //   alert("Código copiado!");
+  // };
 
   const endMatch = async (winner: number, loser: number) => {
     if (!activeGameDay.data) return;
@@ -442,7 +442,7 @@ const GameDay = () => {
             </Button>
           </div>
           <PlayersTable
-            showElo={showElo}
+            showElo={false}
             gameDay={activeGameDay.data}
             substitutePlayer={substitutePlayer}
           />

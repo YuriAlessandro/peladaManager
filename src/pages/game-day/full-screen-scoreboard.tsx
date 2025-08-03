@@ -8,6 +8,7 @@ type Props = {
   scoreA: number;
   scoreB: number;
   incrementScore: (teamIndex: number) => void;
+  maxPoints: number;
 };
 
 
@@ -17,10 +18,22 @@ const FullScreenScoreboard = ({
   scoreA,
   scoreB,
   incrementScore,
+  maxPoints,
 }: Props) => {
+    const scorePoint = (teamIndex: number) => {
+      if (teamIndex === 0 && scoreA + 1 < maxPoints) {
+        incrementScore(0);
+      }
+      else if (teamIndex === 1 && scoreB + 1 < maxPoints) {
+        incrementScore(1);
+      } else {
+        setIsFullScreen(false);
+      }
+    }
+
     return (
         <div className="tw-flex tw-h-[90vh]">
-          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-sky-800 tw-justify-center tw-items-center" onClick={() => incrementScore(1)}>
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-sky-800 tw-justify-center tw-items-center" onClick={() => scorePoint(1)}>
             <h1 
               className="tw-text-[13rem] tw-font-digital"
               style={{
@@ -31,7 +44,7 @@ const FullScreenScoreboard = ({
             </h1>
             <span>Time {teams[0][0]?.name}</span>
           </div>
-          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-rose-800 tw-justify-center tw-items-center" onClick={() => incrementScore(0)}>
+          <div className="tw-flex tw-flex-col tw-w-[50%] tw-bg-rose-800 tw-justify-center tw-items-center" onClick={() => scorePoint(0)}>
             <h1
               className="tw-text-[13rem] tw-font-digital"
               style={{

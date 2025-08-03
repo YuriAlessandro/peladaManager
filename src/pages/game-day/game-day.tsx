@@ -479,6 +479,7 @@ const GameDay = () => {
           scoreA={scoreA}
           scoreB={scoreB}
           incrementScore={incrementScore}
+          maxPoints={activeGameDay.data.maxPoints}
         />
       )}
     </>

@@ -55,14 +55,14 @@ const Home = () => {
         </Link>
       </div>
       <form
-        className="tw-flex tw-gap-5 tw-flex-wrap tw-items-end"
+        className="tw-flex tw-flex-col tw-gap-3"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="tw-flex tw-flex-col">
+        <div className="tw-flex tw-flex-col tw-gap-2">
           <label htmlFor="match-day-code">Código de pelada existente:</label>
           <Input
             id="match-day-code"
-            className="tw-px-0"
+            className="tw-w-full"
             {...matchDayCodeField}
             onChange={(e) => {
               e.target.value = e.target.value.toUpperCase();
@@ -72,7 +72,7 @@ const Home = () => {
         </div>
         <Button
           type="submit"
-          className="tw-bg-emerald-400 tw-flex-1 tw-py-[14px]"
+          className="tw-bg-emerald-400 tw-w-full tw-py-[14px]"
         >
           {isJoining ? (
             <VscLoading className="tw-animate-spin" />

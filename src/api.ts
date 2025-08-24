@@ -167,6 +167,24 @@ async function leaveGameDay() {
   }
 }
 
+async function transferGameDay(joinCode: string) {
+  try {
+    const response = await fetch(`${API_URL}/game-days/transfer/${joinCode}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      return false;
+    }
+    return (await response.json()) as GameDay
+  } catch {
+    return false;
+  }
+}
+
 export const api = {
   getPlayers,
   updatePlayers,
@@ -177,4 +195,5 @@ export const api = {
   getGameDays,
   joinGameDay,
   leaveGameDay,
+  transferGameDay,
 };

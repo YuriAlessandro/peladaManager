@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect } from "react";
-import { FaFlagCheckered, FaPlay, FaExpand } from "react-icons/fa";
+import { FaFlagCheckered, FaPlay, FaExpand, FaCopy } from "react-icons/fa";
 import { FaGear, FaRightLeft } from "react-icons/fa6";
 import { VscLoading } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router";
 import { api } from "../../api";
+import { socketManager } from "../../lib/socket";
 import Button from "../../components/button";
 import PlayersTable from "../../components/players-table";
 import { useActiveGameDay } from "../../hooks/use-active-game-day";
@@ -38,6 +39,39 @@ const GameDay = () => {
     }
   }, [setRandomServeIndex, activeGameDay.data, serveIndex]);
 
+  // Handle socket connection for real-time updates
+  useEffect(() => {
+    if (!activeGameDay.data?.id) return;
+
+    const onTransfer = () => {
+      alert('⚠️ A pelada foi transferida para outro dispositivo. Você será redirecionado.');
+      navigate('/');
+    };
+
+    const onUpdate = () => {
+      activeGameDay.mutate();
+    };
+
+    // Try to connect to socket, but don't break if it fails
+    try {
+      socketManager.connect(activeGameDay.data.id, onTransfer, onUpdate);
+    } catch (error) {
+      console.warn('Socket connection failed, continuing without real-time updates:', error);
+    }
+
+    // Fallback: poll for updates every 10 seconds if socket is not connected
+    const pollInterval = setInterval(() => {
+      if (!socketManager.isConnected()) {
+        activeGameDay.mutate();
+      }
+    }, 10000);
+
+    return () => {
+      socketManager.disconnect();
+      clearInterval(pollInterval);
+    };
+  }, [activeGameDay.data?.id, activeGameDay.mutate, navigate]);
+
   if (activeGameDay.isLoading) {
     return (
       <div className="tw-flex-1 tw-flex tw-justify-center tw-items-center">
@@ -55,11 +89,11 @@ const GameDay = () => {
     );
   }
 
-  // const copyCode = () => {
-  //   if (!activeGameDay.data) return;
-  //   navigator.clipboard.writeText(activeGameDay.data.joinCode);
-  //   alert("Código copiado!");
-  // };
+  const copyCode = () => {
+    if (!activeGameDay.data) return;
+    navigator.clipboard.writeText(activeGameDay.data.joinCode);
+    alert("Código copiado!");
+  };
 
   const endMatch = async (winner: number, loser: number) => {
     if (!activeGameDay.data) return;
@@ -373,9 +407,9 @@ const GameDay = () => {
               {/* <span>Quadra #{activeGameDay.data.courtId.slice(-5)}</span> */}
             </h2>
             <div className="tw-flex tw-gap-2">
-              {/* <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
+              <Button className="tw-text-base tw-gap-2" onClick={copyCode}>
                 <FaCopy />#{activeGameDay.data.joinCode}
-              </Button> */}
+              </Button>
               {!(activeGameDay.data.playingTeams.length === 0) && (
                 <Button
                   className="tw-text-base tw-gap-2"

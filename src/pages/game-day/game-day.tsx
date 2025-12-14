@@ -336,7 +336,7 @@ const GameDay = () => {
 
             // Remove player from team
             const playerIndex = team?.findIndex((p) => p.name === player);
-            if (playerIndex) team?.splice(playerIndex, 1);
+            if (playerIndex !== -1) team?.splice(playerIndex, 1);
 
             // Add nextPlayer to team
             team?.push(nextPlayer);

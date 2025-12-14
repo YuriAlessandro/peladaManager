@@ -185,6 +185,24 @@ async function transferGameDay(joinCode: string) {
   }
 }
 
+async function restartGameDay(gameId: string) {
+  try {
+    const response = await fetch(`${API_URL}/game-days/${gameId}/restart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      return false;
+    }
+    return (await response.json()) as { id: string; courtId: string; joinCode: string };
+  } catch {
+    return false;
+  }
+}
+
 export const api = {
   getPlayers,
   updatePlayers,
@@ -196,4 +214,5 @@ export const api = {
   joinGameDay,
   leaveGameDay,
   transferGameDay,
+  restartGameDay,
 };
